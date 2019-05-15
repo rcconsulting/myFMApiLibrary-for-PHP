@@ -1,21 +1,26 @@
 {
-    "name": "myfmbutler/myfmapilibrary-for-php",
+    "name": "JacobTaylor-RCC/myfmapilibrary-for-php",
     "type": "library",
     "description": "FileMaker 17 API PHP wrapper",
-    "Keywords": ["Lesterius", "FileMaker", "API", "REST", "Database", "Wrapper"],
+    "Keywords": ["FileMaker", "API", "REST", "Database", "Wrapper"],
     "license": "gpl-3.0",
-    "version": "1.0.1",
+    "version": "1.1.1",
     "minimum-stability": "stable",
     "authors": [
       {
         "name": "Lesterius",
         "email": "infoFR@lesterius.com",
         "homepage": "https://www.lesterius.com"
-      }
+      },
+        {
+            "name": "Richard Carlton Consulting",
+            "email": "support@rcconsulting.com",
+            "homepage": "https://rcconsulting.com"
+        }
     ],
     "autoload": {
         "psr-4": {
-          "Lesterius\\FileMakerApi\\": "src",
+          "RCC\\FileMakerApi\\": "src",
           "Tests\\": "tests/"
         }
     },
