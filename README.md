@@ -1,4 +1,4 @@
-Lesterius FileMaker 17 Data API wrapper - myFMApiLibrary for PHP
+FileMaker 17 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
 # Presentation
@@ -8,6 +8,7 @@ Lesterius FileMaker 17 Data API wrapper - myFMApiLibrary for PHP
 Sharing knowledge takes part of our DNA, that's why we developed this library to make the FileMaker Data API easy-to-use with PHP.\
 Break the limits of your application!\
 ![Lesterius logo](http://i1.createsend1.com/ei/r/29/D33/DFF/183501/csfinal/Mailing_Lesterius-logo.png "Lesterius")
+
 Additions and modifications also contributed by Richard Carlton Consulting, Inc. 
 
 ## Description
