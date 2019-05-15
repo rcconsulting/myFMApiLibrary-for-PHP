@@ -8,6 +8,7 @@ Lesterius FileMaker 17 Data API wrapper - myFMApiLibrary for PHP
 Sharing knowledge takes part of our DNA, that's why we developed this library to make the FileMaker Data API easy-to-use with PHP.\
 Break the limits of your application!\
 ![Lesterius logo](http://i1.createsend1.com/ei/r/29/D33/DFF/183501/csfinal/Mailing_Lesterius-logo.png "Lesterius")
+Additions and modifications also contributed by Richard Carlton Consulting, Inc. 
 
 ## Description
 This library is a PHP wrapper of the FileMaker Data API.<br/>
@@ -24,7 +25,7 @@ General FileMaker document on the Data API is available [here](https://fmhelp.fi
 The recommended way to install it is through [Composer](http://getcomposer.org).
 
 ```bash
-composer require myfmbutler/myfmapilibrary-for-php
+composer require JacobTaylor-RCC/myfmapilibrary-for-php
 ```
 
 After installing, you need to require Composer's autoloader:
@@ -213,7 +214,7 @@ try {
 ```
 
 ### Upload file to container
-#### Without checking filename
+#### File Passed Via WebForm
 ```php
 // Call login method first
 
@@ -230,7 +231,7 @@ try {
 }
 ```
 
-#### Renaming file
+#### File On Server
 ```php
 // Call login method first
 
