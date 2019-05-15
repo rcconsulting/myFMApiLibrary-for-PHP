@@ -34,7 +34,7 @@ final class DataApi implements DataApiInterface
      */
     public function __construct($apiUrl, $apiDatabase, $apiUser = null, $apiPassword = null, $sslVerify = true)
     {
-        $this->apiDatabase   = $apiDatabase;
+        $this->apiDatabase   = $this->prepareURLpart($apiDatabase);
         $this->ClientRequest = new CurlClient($apiUrl, $sslVerify);
 
         if (!empty($apiUser)) {
@@ -107,6 +107,7 @@ final class DataApi implements DataApiInterface
      */
     public function createRecord($layout, array $data, array $scripts = [], array $portalData = [])
     {
+        $layout = $this->prepareURLpart($layout);
         $jsonOptions = [
             'fieldData' => json_encode(array_map('\strval', $data))
         ];
@@ -143,6 +144,7 @@ final class DataApi implements DataApiInterface
      */
     public function editRecord($layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = [])
     {
+        $layout = $this->prepareURLpart($layout);
         $jsonOptions = [
             'fieldData' => json_encode(array_map('\strval', $data)),
         ];
@@ -177,12 +179,9 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(
-        $layout,
-        $recordId,
-        array $portalOptions = [],
-        array $scripts = []
-    ) {
+    public function getRecord($layout, $recordId, array $portalOptions = [], array $scripts = [])
+    {
+        $layout = $this->prepareURLpart($layout);
         $queryParams = [];
         if (!empty($portalOptions)) {
             $queryParams['portal'] = $portalOptions['name'];
@@ -223,14 +222,9 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecords(
-        $layout,
-        $sort = null,
-        $offset = null,
-        $limit = null,
-        array $portals = [],
-        array $scripts = []
-    ) {
+    public function getRecords($layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [])
+    {
+        $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
 
         if (!is_null($offset)) {
@@ -280,7 +274,8 @@ final class DataApi implements DataApiInterface
         if (empty($filename)) {
             $filename = pathinfo($filepath, PATHINFO_FILENAME).'.'.pathinfo($filepath, PATHINFO_EXTENSION);
         }
-        
+        $layout = $this->prepareURLpart($layout);
+        $containerFieldName = $this->prepareURLpart($containerFieldName);
         $this->ClientRequest->request(
             'POST',
             "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId/containers/$containerFieldName/$containerFieldRepetition",
@@ -314,16 +309,9 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function findRecords(
-        $layout,
-        $query,
-        $sort = null,
-        $offset = null,
-        $limit = null,
-        array $portals = [],
-        array $scripts = [],
-        $responseLayout = null
-    ) {
+    public function findRecords($layout, $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
+    {
+        $layout = $this->prepareURLpart($layout);
         if (!is_array($query)) {
             $preparedQuery = [$query];
         } else {
@@ -397,6 +385,7 @@ final class DataApi implements DataApiInterface
      */
     public function setGlobalFields($layout, array $globalFields)
     {
+        $layout = $this->prepareURLpart($layout);
         $response = $this->ClientRequest->request(
             'PATCH',
             "/v1/databases/$this->apiDatabase/globals",
@@ -422,6 +411,7 @@ final class DataApi implements DataApiInterface
      */
     public function deleteRecord($layout, $recordId, $scripts = [])
     {
+        $layout = $this->prepareURLpart($layout);
         $this->ClientRequest->request(
             'DELETE',
             "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
@@ -478,6 +468,16 @@ final class DataApi implements DataApiInterface
     }
 
     /**
+     * @param string $data
+     * 
+     * @return string
+     */
+    protected function prepareURLpart($data) 
+    {
+        return rawurlencode($data);
+    }
+    
+    /**
      * @param array $scripts
      *
      * @return array
@@ -486,14 +486,31 @@ final class DataApi implements DataApiInterface
     {
         $preparedScript = [];
         foreach ($scripts as $script) {
-            if (!in_array($script['type'], [self::SCRIPT_POSTREQUEST, self::SCRIPT_PREREQUEST, self::SCRIPT_PRESORT])) {
-                continue;
+            /**
+                * The following works around a quirk of the Data API. If you send a script parameter, but it's blank (unused), it chokes. So delete it.
+                * prerequest and presort behavior is untested (with respect to this specific issue).
+            **/
+            switch ($script['type']) {
+                case self::SCRIPT_PREREQUEST:
+                case self::SCRIPT_PRESORT:
+                    $scriptSuffix = $script['type'];
+                    $preparedScript['script'.$scriptSuffix]          = $script['name'];
+                    $preparedScript['script'.$scriptSuffix.'.param'] = $script['param'];
+                    break;
+                case self::SCRIPT_POSTREQUEST:
+                    $preparedScript['script'] = $script['name'];
+                    if (array_key_exists('param', $script)) {
+                        if (empty($script['param'])) {
+                            unset($script['param']);
+                        } else {
+                            $preparedScript['script.param'] = $script['param'];
+                        }
+                    }
+                    break;
+                default:
+                    continue;
             }
-
-            $scriptSuffix = !($script['type'] === self::SCRIPT_POSTREQUEST) ? '.'.$script['type'] : '';
-
-            $preparedScript['script'.$scriptSuffix]          = $script['name'];
-            $preparedScript['script'.$scriptSuffix.'.param'] = $script['param'];
+            
         }
 
         return $preparedScript;
