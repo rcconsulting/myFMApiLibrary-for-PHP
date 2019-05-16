@@ -1,19 +1,19 @@
 FileMaker 17 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
-# Presentation
-
 ## Team
 [Lesterius](https://www.lesterius.com "Lesterius") is first and foremost a collective of FileMaker and Web developers who are experts and passionated.\
 Sharing knowledge takes part of our DNA, that's why we developed this library to make the FileMaker Data API easy-to-use with PHP.\
 Break the limits of your application!\
 ![Lesterius logo](http://i1.createsend1.com/ei/r/29/D33/DFF/183501/csfinal/Mailing_Lesterius-logo.png "Lesterius")
 
-Additions and modifications also contributed by Richard Carlton Consulting, Inc. 
+[Richard Carlton Consulting](https://rcconsulting.com/ "Richard Carlton Consulting") is a full-stack FileMaker development consultancy, serving clients globally with any and all FileMaker-related needs. We also publish the largest and most [complete video training](https://fmtraining.tv/) course for the FileMaker Community.
 
 ## Description
-This library is a PHP wrapper of the FileMaker Data API.<br/>
+This library is a PHP wrapper of the FileMaker Data API.
+
 You will be able to use every functions like it's documented in your FileMaker server Data Api documentation (accessible via https://[your server domain]/fmi/data/apidoc).
+
 General FileMaker document on the Data API is available [here](https://fmhelp.filemaker.com/docs/17/en/dataapi/)
 
 ## Rationale
