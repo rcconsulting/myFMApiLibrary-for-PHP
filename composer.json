@@ -1,5 +1,5 @@
 {
-    "name": "JacobTaylor-RCC/myfmapilibrary-for-php",
+    "name": "rcconsulting/myfmapilibrary-for-php",
     "type": "library",
     "description": "FileMaker 17 API PHP wrapper",
     "Keywords": ["FileMaker", "API", "REST", "Database", "Wrapper"],
@@ -12,10 +12,15 @@
         "email": "infoFR@lesterius.com",
         "homepage": "https://www.lesterius.com"
       },
-        {
-            "name": "Richard Carlton Consulting",
-            "email": "support@rcconsulting.com",
-            "homepage": "https://rcconsulting.com"
+       {
+           "name": "Jacob Taylor",
+           "email": "jacob.taylor@rcconsulting.com",
+           "homepage": "https://rcconsulting.com"
+       },
+       {
+           "name": "Steve Allen",
+           "email": "steve.allen@rcconsulting.com",            
+           "homepage": "https://rcconsulting.com"
         }
     ],
     "autoload": {
@@ -26,7 +31,8 @@
     },
     "require": {
         "php" : ">=5.5.0",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.6"
