@@ -16,10 +16,20 @@ This library is a PHP wrapper of the FileMaker Data API.<br/>
 You will be able to use every functions like it's documented in your FileMaker server Data Api documentation (accessible via https://[your server domain]/fmi/data/apidoc).
 General FileMaker document on the Data API is available [here](https://fmhelp.filemaker.com/docs/17/en/dataapi/)
 
+## Rationale
+This fork is to bring greater out of the box compatibility to the myFMApiLibrary. The current mainline code from Lesterius does not function on MacOS FileMaker Server installations, nor Windows FileMaker Server installations without modifying PHP.ini to enable the mbstring extension. It functions extremely narrowly: If you're on FMS 17 on Windows, and you only do simple tasks like creating a record (no scripts being called as part of record creation), it will work.
+
+A short list of improvements we've made:
+1. remove curl_escape from CurlClient, and wrap the data API path components in rawurlencode. curl_escape on OSX systems urlencodes the slashes of the path, which results in 404 errors when using the Data API on OSX.
+2. improve script handling so when you use a pre-execution or post-execution script, without a parameter, it does not send a blank parameter confusing the Data API (it causes dapi to reject the request).
+3. A filename parameter was added to the container data upload function, so when passing container data to DAPI from a webform you can tell FileMaker the file's name (it otherwise defaults to the php temp filename, which is not useful).
+4. Documentation improvements
+
 ## Requirements
 
 - PHP >= 5.5
 - PHP cURL extension
+- PHP mbstring extension
 
 ## Installation
 
