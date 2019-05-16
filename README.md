@@ -36,7 +36,7 @@ A short list of improvements we've made:
 The recommended way to install it is through [Composer](http://getcomposer.org).
 
 ```bash
-composer require JacobTaylor-RCC/myfmapilibrary-for-php
+composer require rcconsulting/myfmapilibrary-for-php
 ```
 
 After installing, you need to require Composer's autoloader:
