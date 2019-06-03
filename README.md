@@ -42,9 +42,10 @@ The recommended way to install it is through [Composer](http://getcomposer.org).
 composer require rcconsulting/myfmapilibrary-for-php
 ```
 
-After installing, you need to require Composer's autoloader:
+After installing, you need to notate that you'll use this library, and require Composer's autoloader:
 
 ```php
+use \Lesterius\FileMakerApi\DataApi;
 require_once __DIR__ . '/vendor/autoload.php';
 ```
 
