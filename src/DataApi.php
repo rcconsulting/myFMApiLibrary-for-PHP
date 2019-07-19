@@ -109,11 +109,11 @@ final class DataApi implements DataApiInterface
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [
-            'fieldData' => json_encode(array_map('\strval', $data))
+            'fieldData' => array_map('\strval', $data)
         ];
 
         if (!empty($portalData)) {
-            $jsonOptions['portalData'] = json_encode($portalData);
+            $jsonOptions['portalData'] = $portalData;
         }
 
         $response = $this->ClientRequest->request(
@@ -146,7 +146,7 @@ final class DataApi implements DataApiInterface
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [
-            'fieldData' => json_encode(array_map('\strval', $data)),
+            'fieldData' => array_map('\strval', $data),
         ];
 
         if (!is_null($lastModificationId)) {
@@ -401,7 +401,7 @@ final class DataApi implements DataApiInterface
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json'    => [
-                    'globalFields' => json_encode($globalFields),
+                    'globalFields' => $globalFields,
                 ],
             ]
         );
