@@ -326,16 +326,20 @@ final class DataApi implements DataApiInterface
                     $item[$field['fieldname']] = $field['fieldvalue'];
                 }
 
-                if (isset($queryItem['options']['omit']) && $queryItem['options']['omit'] == true) {
-                    $preparedQuery[] = array_merge($item, ['omit' => "true"]);
+                if (isset($queryItem['options']['omit'])) {
+                    if ($queryItem['options']['omit'] == true || $queryItem['options']['omit'] == "true") {
+                        $preparedQuery[] = array_merge($item, ['omit' => "true"]);
+                    } else {
+                        $preparedQuery[] = array_merge($item, ['omit' => "false"]);
+                    }
                 } else {
-                    $preparedQuery[] = $item;
+                    $preparedQuery[] = array_merge($item, ['omit' => "false"]);
                 }
             }
         }
 
         $jsonOptions = [
-            'query' => json_encode($preparedQuery),
+            'query' => $preparedQuery,
         ];
 
         if (!is_null($offset)) {
@@ -347,7 +351,12 @@ final class DataApi implements DataApiInterface
         }
 
         if (!is_null($sort)) {
-            $jsonOptions['sort'] = (is_array($sort) ? json_encode($sort) : $sort);
+          if (is_array($sort)) {
+            $sortOptions = [
+              'sort' => $sort,
+            ];
+            $jsonOptions = array_merge($jsonOptions, $sortOptions);
+          }
         }
 
         try {
