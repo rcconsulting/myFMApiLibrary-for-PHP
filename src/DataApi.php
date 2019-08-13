@@ -457,6 +457,20 @@ final class DataApi implements DataApiInterface
     {
         return $this->apiToken;
     }
+    
+    /**
+     *  Set API token returned after a succesful login
+     *
+     * @return True|False
+     */
+    public function setApiToken($token)
+    {
+      if ($this->apiToken = $token) {
+        return True;
+      } else {
+        return False;
+      }
+    }
 
     /**
      *  Set API token in request headers
