@@ -260,3 +260,24 @@ try {
   // handle exception
 }
 ```
+## library helper methods
+
+#### token usage
+```php
+// useful when not explicitly logging into data api, but already have valid token
+$dataApi->setApiToken($token);
+
+// returns current api token (without checking if it's valid)
+$token = $dataApi->getApiToken();
+
+// to check if the token is expired:
+if ($dataApi->isApiTokenExpired()) {
+// do stuff
+}
+
+// to refresh the token in the case you've ever previously logged into the data api with this instance of the class
+// currently only works with a data api username/password combo (ie not oauth)
+if ($dataApi->refreshToken()) {
+// success
+}
+
