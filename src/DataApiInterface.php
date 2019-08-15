@@ -120,4 +120,21 @@ interface DataApiInterface
      * @return mixed
      */
     public function getApiToken();
+
+    /**
+     * @param string $token
+     *
+     * @return True|False
+     */
+    public function setApiToken($token);
+
+    /**
+     * @return True|False
+     */
+    public function isApiTokenExpired();
+
+    /**
+     * @return True/False
+     */
+    public function refreshToken();
 }
