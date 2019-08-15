@@ -11,6 +11,7 @@ use Lesterius\FileMakerApi\Exception\Exception;
 final class DataApi implements DataApiInterface
 {
     const FILEMAKER_NO_RECORDS = 401;
+    const FILEMAKER_API_TOKEN_EXPIRED = 952;
 
     const SCRIPT_PREREQUEST  = 'prerequest';
     const SCRIPT_PRESORT     = 'presort';
@@ -19,7 +20,11 @@ final class DataApi implements DataApiInterface
     protected $ClientRequest  = null;
     protected $apiDatabase    = null;
     protected $apiToken       = null;
+    protected $apiTokenDate   = null;
     protected $convertToAssoc = true;
+    protected $dapiUserName = null;
+    protected $dapiUserPass = null;
+    protected $hasToken = False;
 
     /**
      * DataApi constructor
@@ -63,8 +68,8 @@ final class DataApi implements DataApiInterface
                 'json'    => [],
             ]
         );
-
-        $this->apiToken = $response->getHeader('X-FM-Data-Access-Token');
+        $this->setApiToken($response->getHeader('X-FM-Data-Access-Token'));
+        $this->storeCredentials($apiUsername, $apiPassword);
 
         return $this;
     }
@@ -90,8 +95,7 @@ final class DataApi implements DataApiInterface
                 'json'   => [],
             ]
         );
-
-        $this->apiToken = $response->getHeader('X-FM-Data-Access-Token');
+        $this->setApiToken($response->getHeader('X-FM-Data-Access-Token'));
 
         return $this;
     }
@@ -239,6 +243,7 @@ final class DataApi implements DataApiInterface
             $jsonOptions['_sort'] = (is_array($sort) ? json_encode($sort) : $sort);
         }
 
+
         $response = $this->ClientRequest->request(
             'GET',
             "/v1/databases/$this->apiDatabase/layouts/$layout/records",
@@ -312,6 +317,7 @@ final class DataApi implements DataApiInterface
     public function findRecords($layout, $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
+
         if (!is_array($query)) {
             $preparedQuery = [$query];
         } else {
@@ -337,11 +343,9 @@ final class DataApi implements DataApiInterface
                 }
             }
         }
-
         $jsonOptions = [
             'query' => $preparedQuery,
         ];
-
         if (!is_null($offset)) {
             $jsonOptions['offset'] = intval($offset);
         }
@@ -373,11 +377,11 @@ final class DataApi implements DataApiInterface
                 ]
             );
         } catch (Exception $e) {
-            if ($e->getCode() == self::FILEMAKER_NO_RECORDS) {
-                return [];
-            }
-
+          if ($err = $this->dAPIerrorHandler($e)) {
+            return $err;
+          } else {
             throw $e;
+          }
         }
 
         return $response->getBody()['response']['data'];
@@ -449,7 +453,7 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     *  Get API token returned after a succesful login
+     *  Get API token returned after a successful login
      *
      * @return null|string
      */
@@ -457,15 +461,19 @@ final class DataApi implements DataApiInterface
     {
         return $this->apiToken;
     }
-    
+
     /**
-     *  Set API token returned after a succesful login
+     *  Set API token manually
+     *
+     * @param string $token
      *
      * @return True|False
      */
     public function setApiToken($token)
     {
       if ($this->apiToken = $token) {
+        $this->setApiTokenDate();
+        $this->hasToken = True;
         return True;
       } else {
         return False;
@@ -474,10 +482,27 @@ final class DataApi implements DataApiInterface
 
     /**
      *  Set API token in request headers
+     *
+     * @return Header|False
      */
     private function getDefaultHeaders()
     {
-        return ['Authorization' => "Bearer $this->apiToken"];
+      if ($this->hasToken) {
+        if ($this->isApiTokenExpired()) {
+          if ($this->refreshToken()) { // relogin using stored credentials, because the token expired.
+            return ['Authorization' => "Bearer $this->apiToken"];
+          } else {
+            // this can happen when refresh token fails, which may happen with an expired token and oauth login
+            return False;
+          }
+        } else {
+          // Update the token use date and keep going
+          $this->setApiTokenDate();
+          return ['Authorization' => "Bearer $this->apiToken"];
+        }
+      } else {
+        return False;
+      }
     }
 
     /**
@@ -491,16 +516,20 @@ final class DataApi implements DataApiInterface
     }
 
     /**
+     * applies rawurlencode to bits of user-supplied data which will be passed directly to the data api as part of the request path
+     *
      * @param string $data
-     * 
+     *
      * @return string
      */
-    protected function prepareURLpart($data) 
+    protected function prepareURLpart($data)
     {
         return rawurlencode($data);
     }
-    
+
     /**
+     * formats scripts for the data api
+     *
      * @param array $scripts
      *
      * @return array
@@ -533,7 +562,7 @@ final class DataApi implements DataApiInterface
                 default:
                     continue;
             }
-            
+
         }
 
         return $preparedScript;
@@ -564,8 +593,117 @@ final class DataApi implements DataApiInterface
             }
         }
 
-        $options['portal'] = json_encode($portalList);
+        $options['portal'] = $portalList;
 
         return $options;
+    }
+    
+    /**
+    * sets api token last used date. for internal library use. token lifetime is reset on each use in FM DAPI, hence this.
+    *
+    * @return True|False
+    */
+    private function setApiTokenDate(){
+    // calculate and then set token date
+    // this function assumes it will be called in the context of using the token
+      if ($this->apiTokenDate = time()) {
+        return True;
+      } else {
+        return False;
+      }
+    }
+
+    /**
+     * returns API token last use date, or False if there is no last use date.
+     *
+     * @return string|False
+     */
+    private function getApiTokenDate(){
+      if (!is_null($this->apiTokenDate)) {
+        return $this->apiTokenDate;
+      } else {
+        return False;
+      }
+    }
+
+    /**
+    * stores username and password for regular dapi logins, for token regeneration upon expiry
+    *
+    * @param string $user
+    * @param string $pass
+    *
+    * @return True|False
+    */
+    protected function storeCredentials ($user, $pass){
+      if ($this->dapiUserName = $user) {
+        if ($this->dapiUserPass = $pass) {
+          return True;
+        } else {
+          return False;
+        }
+      } else {
+        return False;
+      }
+    }
+
+    /**
+     * answers the question: is the data api token in this instance likely to be expired?
+     *
+     * @return True|False
+     */
+    public function isApiTokenExpired(){
+      // checks if token is OK to use
+      if ($this->getApiTokenDate()) {
+        $expiry = $this->apiTokenDate + (14 * 60); // actual tokens last 15 minutes. we'll be conservative here.
+        if (time() > $expiry) {
+          return True;
+        } else {
+          return False;
+        }
+      } else {
+        return True; // if it's null, it has not been set, so it is "expired"
+      }
+    }
+
+    /**
+     * will refresh the token IF token was retreived via username/password login call sometime in the past
+     *
+     * @return True/False
+     */
+    public function refreshToken(){
+      // warning: cannot be called before login()
+      if (!is_null($this->dapiUserName)) {
+        if ($this->login($this->dapiUserName, $this->dapiUserPass)) {
+          return True;
+        } else {
+          return False;
+        }
+      } else {
+        return False;
+      }
+    }
+
+    /**
+     * handles a couple common errors
+     *
+     * @return mixed
+     */
+    private function dAPIerrorHandler($e) {
+      // this logic was previously in a single function in the library, but this is a useful feature.
+      // will return true (or be truthy) if the error was or can be handled silently.
+      $code = $e->getCode();
+      switch($code) {
+        case 401:
+          // found set of 0, may or may not be expected
+          return [];
+          break;
+        case 952:
+          // 952 = dapi token has expired
+          return True;
+          break;
+        default:
+          return False;
+          break;
+      }
     }
 }
