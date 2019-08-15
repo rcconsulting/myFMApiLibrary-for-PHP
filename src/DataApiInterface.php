@@ -117,7 +117,7 @@ interface DataApiInterface
     public function logout();
 
     /**
-     * @return mixed
+     * @return string|null
      */
     public function getApiToken();
 
@@ -134,7 +134,7 @@ interface DataApiInterface
     public function isApiTokenExpired();
 
     /**
-     * @return True/False
+     * @return True|False
      */
     public function refreshToken();
 }
