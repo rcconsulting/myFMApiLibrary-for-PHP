@@ -272,6 +272,8 @@ $token = $dataApi->getApiToken();
 
 // to check if the token is expired:
 if ($dataApi->isApiTokenExpired()) {
+// token expired
+} else {
 // do stuff
 }
 
