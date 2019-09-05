@@ -24,6 +24,8 @@ final class DataApi implements DataApiInterface
     protected $convertToAssoc = true;
     protected $dapiUserName = null;
     protected $dapiUserPass = null;
+    protected $oAuthRequestId = null;
+    protected $oAuthIdentifier = null;
     protected $hasToken = False;
 
     /**
@@ -42,7 +44,7 @@ final class DataApi implements DataApiInterface
         $this->apiDatabase   = $this->prepareURLpart($apiDatabase);
         $this->ClientRequest = new CurlClient($apiUrl, $sslVerify);
 
-        if (!empty($apiUser)) {
+        if (!is_null($apiUser)) {
             $this->login($apiUser, $apiPassword);
         }
     }
@@ -56,7 +58,7 @@ final class DataApi implements DataApiInterface
      * @return $this
      * @throws Exception
      */
-    public function login($apiUsername, $apiPassword)
+    public function login(string $apiUsername, string $apiPassword)
     {
         $response = $this->ClientRequest->request(
             'POST',
@@ -81,7 +83,7 @@ final class DataApi implements DataApiInterface
      * @return $this
      * @throws Exception
      */
-    public function loginOauth($oAuthRequestId, $oAuthIdentifier)
+    public function loginOauth(string $oAuthRequestId, string $oAuthIdentifier)
     {
         $response = $this->ClientRequest->request(
             'POST',
@@ -96,9 +98,30 @@ final class DataApi implements DataApiInterface
             ]
         );
         $this->setApiToken($response->getHeader('X-FM-Data-Access-Token'));
+        $this->storeOAuth($oAuthRequestId, $oAuthIdentifier);
 
         return $this;
     }
+
+    /**
+     *  Close the connection with FileMaker Server API
+     * @throws Exception
+     */
+    public function logout()
+    {
+        $this->ClientRequest->request(
+            'DELETE',
+            "/v1/databases/$this->apiDatabase/sessions/$this->apiToken",
+            []
+        );
+        $this->apiToken = null;
+        $this->apiTokenDate = null;
+        $this->hasToken = False;
+
+        return $this;
+    }
+
+    // BASIC RECORD OPERATIONS
 
     /**
      * @param       $layout
@@ -115,7 +138,8 @@ final class DataApi implements DataApiInterface
         $jsonOptions = [
             'fieldData' => array_map('\strval', $data)
         ];
-
+        // TODO: ? encodeFieldData()?
+        // TODO: ? encodePortalData()?
         if (!empty($portalData)) {
             $jsonOptions['portalData'] = $portalData;
         }
@@ -149,6 +173,7 @@ final class DataApi implements DataApiInterface
     public function editRecord($layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = [])
     {
         $layout = $this->prepareURLpart($layout);
+        $recordId = $this->prepareURLpart($recordId);
         $jsonOptions = [
             'fieldData' => array_map('\strval', $data),
         ];
@@ -173,19 +198,72 @@ final class DataApi implements DataApiInterface
     }
 
     /**
+     * Duplicate an existing record
+     *
+     * @param       $layout
+     * @param       $recordId
+     * @param array $scripts
+     * @return mixed
+     * @throws Exception
+     */
+      public function duplicateRecord($layout, $recordId, array $scripts = [])
+      {
+          $layout = $this->prepareURLpart($layout);
+          $recordId = $this->prepareURLpart($recordId);
+          // Send curl request
+          $response = $this->ClientRequest->request(
+              'POST',
+              "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
+              [
+                  'headers' => $this->getDefaultHeaders(),
+                  'json'    => array_merge(
+                      $this->prepareScriptOptions($scripts)
+                  ),
+              ]
+          );
+          return $response->getBody()['response']['recordId'];
+      }
+
+      /**
+       * Delete record by id
+       *
+       * @param       $layout
+       * @param       $recordId
+       * @param array $scripts
+       *
+       * @throws Exception
+       */
+      public function deleteRecord($layout, $recordId, array $scripts = [])
+      {
+          $layout = $this->prepareURLpart($layout);
+          $recordId = $this->prepareURLpart($recordId);
+          $this->ClientRequest->request(
+              'DELETE',
+              "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
+              [
+                  'headers' => $this->getDefaultHeaders(),
+                  'json'    => $this->prepareScriptOptions($scripts),
+              ]
+          );
+      }
+
+    /**
      * Get record detail
      *
      * @param       $layout
      * @param       $recordId
      * @param array $portalOptions
      * @param array $scripts
+     * @param null  $responseLayout
      *
      * @return mixed
      * @throws Exception
      */
-    public function getRecord($layout, $recordId, array $portalOptions = [], array $scripts = [])
+    public function getRecord($layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
+        $recordId = $this->prepareURLpart($recordId);
+
         $queryParams = [];
         if (!empty($portalOptions)) {
             $queryParams['portal'] = $portalOptions['name'];
@@ -196,6 +274,9 @@ final class DataApi implements DataApiInterface
             if (isset($portalOptions['offset'])) {
                 $queryParams['_offset.'.$queryParams['portal']] = $portalOptions['offset'];
             }
+        }
+        if (!is_null($responseLayout)) {
+            $queryParams['layout.response'] = $responseLayout;
         }
 
         $response = $this->ClientRequest->request(
@@ -222,11 +303,12 @@ final class DataApi implements DataApiInterface
      * @param null  $limit
      * @param array $portals
      * @param array $scripts
+     * @param null  $responseLayout
      *
      * @return mixed
      * @throws Exception
      */
-    public function getRecords($layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [])
+    public function getRecords($layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -243,6 +325,9 @@ final class DataApi implements DataApiInterface
             $jsonOptions['_sort'] = (is_array($sort) ? json_encode($sort) : $sort);
         }
 
+        if (!is_null($responseLayout)) {
+            $jsonOptions['layout.response'] = $responseLayout;
+        }
 
         $response = $this->ClientRequest->request(
             'GET',
@@ -280,6 +365,7 @@ final class DataApi implements DataApiInterface
             $filename = pathinfo($filepath, PATHINFO_FILENAME).'.'.pathinfo($filepath, PATHINFO_EXTENSION);
         }
         $layout = $this->prepareURLpart($layout);
+        $recordId = $this->prepareURLpart($recordId);
         $containerFieldName = $this->prepareURLpart($containerFieldName);
         $this->ClientRequest->request(
             'POST',
@@ -303,7 +389,7 @@ final class DataApi implements DataApiInterface
      * Find records
      *
      * @param       $layout
-     * @param       $query
+     * @param array $query
      * @param null  $sort
      * @param null  $offset
      * @param null  $limit
@@ -314,7 +400,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function findRecords($layout, $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
+    public function findRecords($layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
 
@@ -354,6 +440,10 @@ final class DataApi implements DataApiInterface
             $jsonOptions['limit'] = intval($limit);
         }
 
+        if (!is_null($responseLayout)) {
+            $jsonOptions['layout.response'] = $responseLayout;
+        }
+
         if (!is_null($sort)) {
           if (is_array($sort)) {
             $sortOptions = [
@@ -388,6 +478,38 @@ final class DataApi implements DataApiInterface
     }
 
     /**
+     * Execute script alone
+     *
+     * @param     $layout
+     * @param     $scriptName
+     * @param null $scriptParam
+     * @return mixed
+     * @throws Exception
+     */
+    public function executeScript($layout, $scriptName, $scriptParam = null)
+    {
+        $layout = $this->prepareURLpart($layout);
+        // Prepare options
+        $queryParams = [];
+        // optional parameters
+        if (!empty($scriptParam)) {
+            $queryParams['script.param'] = $scriptParam;
+        }
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/databases/$this->apiDatabase/layouts/$layout/script/$scriptName",
+            [
+                'headers'      => $this->getDefaultHeaders(),
+                'query_params' => array_merge(
+                    $queryParams
+                ),
+            ]
+        );
+        return $response->getBody()['response']['scriptResult'];
+    }
+
+    /**
      * Define one or multiple global fields
      *
      * @param       $layout
@@ -413,72 +535,7 @@ final class DataApi implements DataApiInterface
         return $response->getBody();
     }
 
-    /**
-     * Delete record by id
-     *
-     * @param       $layout
-     * @param       $recordId
-     * @param array $scripts
-     *
-     * @throws Exception
-     */
-    public function deleteRecord($layout, $recordId, $scripts = [])
-    {
-        $layout = $this->prepareURLpart($layout);
-        $this->ClientRequest->request(
-            'DELETE',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
-            [
-                'headers' => $this->getDefaultHeaders(),
-                'json'    => $this->prepareScriptOptions($scripts),
-            ]
-        );
-    }
-
-    /**
-     *  Close the connection with FileMaker Server API
-     * @throws Exception
-     */
-    public function logout()
-    {
-        $this->ClientRequest->request(
-            'DELETE',
-            "/v1/databases/$this->apiDatabase/sessions/$this->apiToken",
-            []
-        );
-
-        $this->resetObject();
-
-        return $this;
-    }
-
-    /**
-     *  Get API token returned after a successful login
-     *
-     * @return null|string
-     */
-    public function getApiToken()
-    {
-        return $this->apiToken;
-    }
-
-    /**
-     *  Set API token manually
-     *
-     * @param string $token
-     *
-     * @return True|False
-     */
-    public function setApiToken($token)
-    {
-      if ($this->apiToken = $token) {
-        $this->setApiTokenDate();
-        $this->hasToken = True;
-        return True;
-      } else {
-        return False;
-      }
-    }
+    // UTILITY FUNCTIONS
 
     /**
      *  Set API token in request headers
@@ -506,16 +563,6 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * Reset object properties
-     */
-    private function resetObject()
-    {
-        foreach ($this as $key => $value) {
-            $this->$key = null;
-        }
-    }
-
-    /**
      * applies rawurlencode to bits of user-supplied data which will be passed directly to the data api as part of the request path
      *
      * @param string $data
@@ -524,7 +571,7 @@ final class DataApi implements DataApiInterface
      */
     protected function prepareURLpart($data)
     {
-        return rawurlencode($data);
+        return rawurlencode(trim($data));
     }
 
     /**
@@ -539,7 +586,7 @@ final class DataApi implements DataApiInterface
         $preparedScript = [];
         foreach ($scripts as $script) {
             /**
-                * The following works around a quirk of the Data API. If you send a script parameter, but it's blank (unused), it chokes. So delete it.
+                * The following works around a quirk of the 17 Data API. If you send a script parameter, but it's blank (unused), it chokes. So delete it.
                 * prerequest and presort behavior is untested (with respect to this specific issue).
             **/
             switch ($script['type']) {
@@ -597,34 +644,8 @@ final class DataApi implements DataApiInterface
 
         return $options;
     }
-    
-    /**
-    * sets api token last used date. for internal library use. token lifetime is reset on each use in FM DAPI, hence this.
-    *
-    * @return True|False
-    */
-    private function setApiTokenDate(){
-    // calculate and then set token date
-    // this function assumes it will be called in the context of using the token
-      if ($this->apiTokenDate = time()) {
-        return True;
-      } else {
-        return False;
-      }
-    }
 
-    /**
-     * returns API token last use date, or False if there is no last use date.
-     *
-     * @return string|False
-     */
-    private function getApiTokenDate(){
-      if (!is_null($this->apiTokenDate)) {
-        return $this->apiTokenDate;
-      } else {
-        return False;
-      }
-    }
+    // CREDENTIAL MANAGEMENT
 
     /**
     * stores username and password for regular dapi logins, for token regeneration upon expiry
@@ -634,7 +655,7 @@ final class DataApi implements DataApiInterface
     *
     * @return True|False
     */
-    protected function storeCredentials ($user, $pass){
+    protected function storeCredentials (string $user, string $pass){
       if ($this->dapiUserName = $user) {
         if ($this->dapiUserPass = $pass) {
           return True;
@@ -647,7 +668,90 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * answers the question: is the data api token in this instance likely to be expired?
+    * stores $oAuthRequestId and $oAuthIdentifier for oAuth dapi logins, for token regeneration upon expiry
+    *
+    * @param string $user
+    * @param string $pass
+    *
+    * @return True|False
+    */
+    protected function storeOAuth (string $oAuthRequestId, string $oAuthIdentifier){
+      if ($this->oAuthRequestId = $oAuthRequestId) {
+        if ($this->oAuthIdentifier = $oAuthIdentifier) {
+          return True;
+        } else {
+          return False;
+        }
+      } else {
+        return False;
+      }
+    }
+
+    // TOKEN MANAGEMENT
+
+    /**
+     *  Get API token returned after a successful login
+     *
+     * @return null|string
+     */
+    public function getApiToken()
+    {
+        return $this->apiToken;
+    }
+
+    /**
+     *  Set API token manually
+     *
+     * @param string $token
+     * @param string $date
+     *
+     * @return True|False
+     */
+    public function setApiToken(string $token, $date = null)
+    {
+      if ($this->apiToken = $token) {
+        if (!is_null($date)){
+          $this->apiTokenDate = $date;
+        } else {
+          $this->setApiTokenDate();
+        }
+        $this->hasToken = True;
+        return True;
+      } else {
+        return False;
+      }
+    }
+
+    /**
+     * returns API token last use date, or False if there is no last use date.
+     *
+     * @return string|False
+     */
+    public function getApiTokenDate(){
+      if (!is_null($this->apiTokenDate)) {
+        return $this->apiTokenDate;
+      } else {
+        return False;
+      }
+    }
+
+    /**
+    * sets api token last used date. for internal library use. token lifetime is reset on each use in FM DAPI, hence this.
+    *
+    * @return True|False
+    */
+    public function setApiTokenDate(){
+    // calculate and then set token date
+    // this function assumes it will be called in the context of using the token
+      if ($this->apiTokenDate = time()) {
+        return True;
+      } else {
+        return False;
+      }
+    }
+
+    /**
+     * answers the question: is the data api token in this class instance likely to be expired?
      *
      * @return True|False
      */
@@ -678,9 +782,120 @@ final class DataApi implements DataApiInterface
         } else {
           return False;
         }
+      } elseif (!is_null($this->oAuthRequestId)) {
+        if ($this->loginOauth($this->oAuthRequestId, $this->oAuthIdentifier)) {
+          return True;
+        } else {
+          return False;
+        }
       } else {
         return False;
       }
+    }
+
+    // METADATA OPERATIONS
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getProductInfo()
+    {
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/productInfo",
+            [
+                'headers' => $this->getDefaultHeaders(),
+                'json'    => []
+            ]
+        );
+        return $response->getBody()['response'];
+    }
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getDatabaseNames()
+    {
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/databases",
+            [
+                'headers' => $this->getHeaderAuth(),
+                'json'    => []
+            ]
+        );
+        return $response->getBody()['response'];
+    }
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getLayoutNames()
+    {
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/databases/$this->apiDatabase/layouts",
+            [
+                'headers' => $this->getDefaultHeaders(),
+                'json'    => []
+            ]
+        );
+        return $response->getBody()['response'];
+    }
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getScriptNames()
+    {
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/databases/$this->apiDatabase/scripts",
+            [
+                'headers' => $this->getDefaultHeaders(),
+                'json'    => []
+            ]
+        );
+        return $response->getBody()['response'];
+    }
+
+    /**
+     * @param $layout
+     * @param null $recordId
+     *
+     * @throws Exception
+     * @return mixed
+     */
+    public function getLayoutMetadata($layout, $recordId = null)
+    {
+        // Prepare options
+        $recordId = $this->prepareURLpart($recordId);
+        $jsonOptions = [];
+        $metadataFormat = '/metadata';
+        if (!empty($recordId)) {
+            $jsonOptions['recordId'] = $recordId;
+            $metadataFormat = '';
+        }
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/databases/$this->apiDatabase/layouts/$layout".$metadataFormat,
+            [
+                'headers' => $this->getDefaultHeaders(),
+                'json'    => array_merge(
+                    $jsonOptions
+                ),
+            ]
+        );
+        return $response->getBody()['response'];
     }
 
     /**
