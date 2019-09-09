@@ -1,4 +1,4 @@
-FileMaker 17 Data API wrapper - myFMApiLibrary for PHP
+FileMaker 17/18 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
 ## Team
@@ -10,7 +10,7 @@ Break the limits of your application!\
 [Richard Carlton Consulting](https://rcconsulting.com/ "Richard Carlton Consulting") is a full-stack FileMaker development consultancy, serving clients globally with any and all FileMaker-related needs. We also publish the largest and most [complete video training](https://fmtraining.tv/) course for the FileMaker Community.
 
 ## Description
-This library is a PHP wrapper of the FileMaker Data API.
+This library is a PHP wrapper of the FileMaker Data API. It supports both 17 and 18 Data API commands, though if you use an 18 command (metadata commands for ex) on 17, it will fail.
 
 You will be able to use every functions like it's documented in your FileMaker server Data Api documentation (accessible via https://[your server domain]/fmi/data/apidoc).
 
@@ -266,6 +266,8 @@ try {
 ```php
 // useful when not explicitly logging into data api, but already have valid token
 $dataApi->setApiToken($token);
+// also supported
+$dataApi->setApiToken($token, $tokenDate); // + unix timestamp
 
 // returns current api token (without checking if it's valid)
 $token = $dataApi->getApiToken();
