@@ -17,7 +17,7 @@ You will be able to use every functions like it's documented in your FileMaker s
 General FileMaker document on the Data API is available [here](https://fmhelp.filemaker.com/docs/17/en/dataapi/)
 
 ## Rationale
-This fork is to bring greater out of the box compatibility to the myFMApiLibrary. The current mainline code from Lesterius does not function on MacOS FileMaker Server installations, nor Windows FileMaker Server installations without modifying PHP.ini to enable the mbstring extension. The Lesterius library functions extremely narrowly: If you're on FMS 17 on Windows, and you only do simple tasks like creating a record (no scripts being called as part of record creation), it will work.
+This fork is to bring greater out of the box compatibility to the myFMApiLibrary, vs the Lesterius upstream code. We're immensely grateful for the hard work Lesterius put in.
 
 We submitted these changes to Lesterius, who have declined to accept the improvements. So, we forked it.
 
@@ -45,9 +45,12 @@ composer require rcconsulting/myfmapilibrary-for-php
 After installing, you need to notate that you'll use this library, and require Composer's autoloader:
 
 ```php
-use \Lesterius\FileMakerApi\DataApi;
+use \RCConsulting\FileMakerApi\DataApi;
 require_once __DIR__ . '/vendor/autoload.php';
 ```
+
+# New in 2.0
+We raised the major version due to shipping this in a paid product, which requires we not retain lesterius in the namespacing. This would break all shipping code, so we raised the version. 
 
 # Usage
 
@@ -63,13 +66,13 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 Login with credentials:
 ```php
-$dataApi = new \Lesterius\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
+$dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
 $dataApi->login('filemaker api user', 'filemaker api password');
 ```
 
 Login with oauth:
 ```php
-$dataApi = new \Lesterius\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
+$dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
 $dataApi->loginOauth('oAuthRequestId', 'oAuthIdentifier');
 ```
 
@@ -97,12 +100,12 @@ $scripts = [
     [
         'name'  => 'ValidateUser',
         'param' => 'johndoe@acme.inc',
-        'type'  => Lesterius\FileMakerApi\DataApi::SCRIPT_PREREQUEST
+        'type'  => RCConsulting\FileMakerApi\DataApi::SCRIPT_PREREQUEST
     ],
     [
         'name'  => 'SendEmail',
         'param' => 'johndoe@acme.inc',
-        'type'  => Lesterius\FileMakerApi\DataApi::SCRIPT_POSTREQUEST
+        'type'  => RCConsulting\FileMakerApi\DataApi::SCRIPT_POSTREQUEST
     ]
 ];
 
