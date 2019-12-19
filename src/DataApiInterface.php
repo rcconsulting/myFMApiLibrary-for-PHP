@@ -1,10 +1,10 @@
 <?php
 
-namespace Lesterius\FileMakerApi;
+namespace RCConsulting\FileMakerApi;
 
 /**
  * Interface DataApiInterface
- * @package Lesterius\FileMakerApi
+ * @package RCConsulting\FileMakerApi
  */
 interface DataApiInterface
 {
