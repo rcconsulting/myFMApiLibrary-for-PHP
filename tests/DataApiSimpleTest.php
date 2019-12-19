@@ -1,12 +1,12 @@
 <?php
 
-namespace Lesterius\FileMakerApi;
+namespace RCConsulting\FileMakerApi;
 
 require_once __DIR__.'/../vendor/autoload.php';
 
 /**
  * Class FileMakerApiTest
- * @package Lesterius\DataApi
+ * @package RCConsulting\DataApi
  */
 class DataApiSimpleTest
 {
