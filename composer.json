@@ -4,7 +4,7 @@
     "description": "FileMaker 17/18 API PHP wrapper",
     "Keywords": ["FileMaker", "API", "REST", "Database", "Wrapper"],
     "license": "gpl-3.0",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "minimum-stability": "stable",
     "authors": [
       {
