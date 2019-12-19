@@ -1,13 +1,13 @@
 <?php
 
-namespace Lesterius\FileMakerApi;
+namespace RCConsulting\FileMakerApi;
 
-use Lesterius\FileMakerApi\Exception\Exception;
+use RCConsulting\FileMakerApi\Exception\Exception;
 
 /**
  * Class CurlClient
  *
- * @package Lesterius\DataApi
+ * @package RCConsulting\DataApi
  */
 final class CurlClient
 {
