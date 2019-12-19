@@ -1,5 +1,5 @@
 <?php
 
-namespace Lesterius\FileMakerApi\Exception;
+namespace RCConsulting\FileMakerApi\Exception;
 
 class Exception extends \Exception {}
