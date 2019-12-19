@@ -14,7 +14,9 @@ This library is a PHP wrapper of the FileMaker Data API. It supports both 17 and
 
 You will be able to use every functions like it's documented in your FileMaker server Data Api documentation (accessible via https://[your server domain]/fmi/data/apidoc).
 
-General FileMaker document on the Data API is available [here](https://fmhelp.filemaker.com/docs/17/en/dataapi/)
+General FileMaker document on the FMS 17 Data API is available [here](https://fmhelp.filemaker.com/docs/17/en/dataapi/)
+
+General FileMaker document on the FMS 18 Data API is available [here](https://fmhelp.filemaker.com/docs/18/en/dataapi/)
 
 ## Rationale
 This fork is to bring greater out of the box compatibility to the myFMApiLibrary, vs the Lesterius upstream code. We're immensely grateful for the hard work Lesterius put in.
