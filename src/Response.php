@@ -1,12 +1,12 @@
 <?php
 
-namespace Lesterius\FileMakerApi;
+namespace RCConsulting\FileMakerApi;
 
-use Lesterius\FileMakerApi\Exception\Exception;
+use RCConsulting\FileMakerApi\Exception\Exception;
 
 /**
  * Class Response
- * @package Lesterius\FileMakerApi
+ * @package RCConsulting\FileMakerApi
  */
 final class Response
 {
