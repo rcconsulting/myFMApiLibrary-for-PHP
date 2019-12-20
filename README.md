@@ -227,7 +227,7 @@ try {
 ### Blind Fire Script
 ```php
 try {
-    $dataApi->executeScript($scriptName, $scriptParameters);
+    $dataApi->executeScript($layout, $scriptName, $scriptParameters);
 } catch(\Exception $e) {
     // handle exception
 }
