@@ -52,7 +52,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 ```
 
 # New in 2.0
-We raised the major version due to shipping this in a paid product, which requires we not retain lesterius in the namespacing. This would break all shipping code, so we raised the version. 
+We raised the major version due to shipping this in a paid product, which requires we not retain lesterius in the namespacing. This would break all shipping code, so we raised the version. The library has also been relicensed from GPL-3 to BSD-3, to facilitate commercial development. RCC will continue to publish all improvements to the library here.
 
 # Usage
 
