@@ -40,8 +40,16 @@ A short list of improvements we've made:
 
 The recommended way to install it is through [Composer](http://getcomposer.org).
 
+If you would like the GPL-3 version of the Library, please use the 1.x version as follows:
+
 ```bash
-composer require rcconsulting/myfmapilibrary-for-php
+composer require rcconsulting/myfmapilibrary-for-php:1.*
+```
+
+If you would like the BSD-3 version of the Library, please use the 2.x (or newer) version as follows:
+
+```bash
+composer require rcconsulting/myfmapilibrary-for-php:\>=2
 ```
 
 After installing, you need to notate that you'll use this library, and require Composer's autoloader:
