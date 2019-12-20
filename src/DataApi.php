@@ -489,24 +489,41 @@ final class DataApi implements DataApiInterface
     public function executeScript($layout, $scriptName, $scriptParam = null)
     {
         $layout = $this->prepareURLpart($layout);
+        $scriptName = $this->prepareURLpart($scriptName);
         // Prepare options
         $queryParams = [];
         // optional parameters
         if (!empty($scriptParam)) {
             $queryParams['script.param'] = $scriptParam;
         }
+        if (!empty($scriptParam)){
+            $options = [
+                'headers'       => $this->getDefaultHeaders(),
+                'query_params'  => array_merge(
+                    $queryParams
+                ),
+            ];
+        } else {
+            $options = [
+            'headers'           => $this->getDefaultHeaders()
+            ];
+        }
+        
         // Send curl request
         $response = $this->ClientRequest->request(
             'GET',
             "/v1/databases/$this->apiDatabase/layouts/$layout/script/$scriptName",
-            [
-                'headers'      => $this->getDefaultHeaders(),
-                'query_params' => array_merge(
-                    $queryParams
-                ),
-            ]
+            $options
         );
-        return $response->getBody()['response']['scriptResult'];
+        if ($response->getBody()['response']['scriptError'] == 0) {
+            if (array_key_exists('scriptResult', $response->getBody()['response'])){
+                return $response->getBody()['response']['scriptResult'];
+            } else {
+                return True;
+            }
+        } else {
+            return $response->getBody()['response']['scriptError'];
+        }
     }
 
     /**
