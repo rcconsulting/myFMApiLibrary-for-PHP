@@ -216,6 +216,15 @@ try {
 }
 ```
 
+### Blind Fire Script
+```php
+try {
+    $dataApi->executeScript($scriptName, $scriptParameters);
+} catch(\Exception $e) {
+    // handle exception
+}
+```
+
 ### Set global fields
 
 ```php
