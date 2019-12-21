@@ -49,7 +49,7 @@ composer require rcconsulting/myfmapilibrary-for-php:1.*
 If you would like the BSD-3 version of the Library, please use the 2.x (or newer) version as follows:
 
 ```bash
-composer require rcconsulting/myfmapilibrary-for-php:\>=2
+composer require rcconsulting/myfmapilibrary-for-php:\>=2.0.0
 ```
 
 After installing, you need to notate that you'll use this library, and require Composer's autoloader:
