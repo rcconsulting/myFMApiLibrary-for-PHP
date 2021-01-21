@@ -70,7 +70,7 @@ final class DataApi implements DataApiInterface
                 'json'    => [],
             ]
         );
-        $this->setApiToken($response->getHeader('X-FM-Data-Access-Token'));
+        $this->setApiToken($response->getBody()['response']['token']);
         $this->storeCredentials($apiUsername, $apiPassword);
 
         return $this;
@@ -89,7 +89,7 @@ final class DataApi implements DataApiInterface
             'POST',
             "/v1/databases/$this->apiDatabase/sessions",
             [
-                'header' => [
+                'headers' => [
                     'X-FM-Data-Login-Type'       => 'oauth',
                     'X-FM-Data-OAuth-Request-Id' => $oAuthRequestId,
                     'X-FM-Data-OAuth-Identifier' => $oAuthIdentifier,
@@ -97,7 +97,7 @@ final class DataApi implements DataApiInterface
                 'json'   => [],
             ]
         );
-        $this->setApiToken($response->getHeader('X-FM-Data-Access-Token'));
+        $this->setApiToken($response->getBody()['response']['token']);
         $this->storeOAuth($oAuthRequestId, $oAuthIdentifier);
 
         return $this;
