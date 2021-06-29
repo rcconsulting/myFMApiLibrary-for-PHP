@@ -624,7 +624,7 @@ final class DataApi implements DataApiInterface
                     }
                     break;
                 default:
-                    continue;
+                    break;
             }
 
         }
