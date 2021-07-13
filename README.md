@@ -80,6 +80,13 @@ $dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com
 $dataApi->login('filemaker api user', 'filemaker api password');
 ```
 
+One-line example of Login with Credentials:
+```php
+// Arguments: DAPI URL, Database Name, DAPI User, DAPI Password, SSL Verification Enabled?, Force Legacy HTTP 1.1?
+$dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data','MyDatabase', "DAP_User", "DAPI_Pass_1234~", True, False);
+```
+
+
 Login with oauth:
 ```php
 $dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
