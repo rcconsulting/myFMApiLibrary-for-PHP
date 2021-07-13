@@ -20,6 +20,7 @@ final class CurlClient
      *
      * @param $apiUrl
      * @param $sslVerify
+     * @param $forceLegacyHTTP
      */
     public function __construct($apiUrl, $sslVerify, $forceLegacyHTTP)
     {
