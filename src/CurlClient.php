@@ -13,6 +13,7 @@ final class CurlClient
 {
     private $sslVerify = false;
     private $baseUrl   = null;
+    private $forceLegacyHTTP = false;
 
     /**
      * CurlClient constructor
@@ -20,10 +21,11 @@ final class CurlClient
      * @param $apiUrl
      * @param $sslVerify
      */
-    public function __construct($apiUrl, $sslVerify)
+    public function __construct($apiUrl, $sslVerify, $forceLegacyHTTP)
     {
         $this->sslVerify = $sslVerify;
         $this->baseUrl   = $apiUrl;
+        $this->forceLegacyHTTP = $forceLegacyHTTP;
     }
 
     /**
@@ -49,6 +51,9 @@ final class CurlClient
         if (!$this->sslVerify) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        }
+        if ($this->forceLegacyHTTP){
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
         }
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
