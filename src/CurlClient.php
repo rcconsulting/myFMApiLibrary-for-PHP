@@ -11,38 +11,38 @@ use RCConsulting\FileMakerApi\Exception\Exception;
  */
 final class CurlClient
 {
-    private $sslVerify = false;
-    private $baseUrl   = null;
-    private $forceLegacyHTTP = false;
+    private $sslVerify = False;
+    private $baseUrl = null;
+    private $forceLegacyHTTP = False;
 
     /**
      * CurlClient constructor
      *
-     * @param $apiUrl
-     * @param $sslVerify
-     * @param $forceLegacyHTTP
+     * @param string $apiUrl
+     * @param bool   $sslVerify
+     * @param bool   $forceLegacyHTTP
      */
-    public function __construct($apiUrl, $sslVerify, $forceLegacyHTTP)
+    public function __construct(string $apiUrl, bool $sslVerify, bool $forceLegacyHTTP)
     {
         $this->sslVerify = $sslVerify;
-        $this->baseUrl   = $apiUrl;
+        $this->baseUrl = $apiUrl;
         $this->forceLegacyHTTP = $forceLegacyHTTP;
     }
 
     /**
      * Execute a cURL request
      *
-     * @param       $method
-     * @param       $url
-     * @param array $options
+     * @param string $method
+     * @param string $url
+     * @param array  $options
      *
      * @return Response
      * @throws Exception
      */
-    public function request($method, $url, array $options)
+    public function request(string $method, string $url, array $options)
     {
         $ch = curl_init();
-        if ($ch === false) {
+        if ($ch === False) {
             throw new Exception('Failed to initialize curl');
         }
 
@@ -53,20 +53,20 @@ final class CurlClient
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         }
-        if ($this->forceLegacyHTTP){
+        if ($this->forceLegacyHTTP) {
             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
         }
 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, True);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, True);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_POST, ($method === 'POST' ? true : false));
+        curl_setopt($ch, CURLOPT_POST, ($method === 'POST' ? True : False));
 
         $contentLength = 0;
         if (isset($options['json']) && !empty($options['json']) && $method !== 'GET') {
             $body = json_encode($options['json']);
 
-            if ($body === false) {
+            if ($body === False) {
                 throw new Exception("Failed to json encode parameters");
             }
 
@@ -76,11 +76,11 @@ final class CurlClient
         }
 
         if (isset($options['file']) && !empty($options['file']) && $method === 'POST') {
-            $cURLFile  = new \CURLFile($options['file']['path'], mime_content_type($options['file']['path']), $options['file']['name']);
+            $cURLFile = new \CURLFile($options['file']['path'], mime_content_type($options['file']['path']), $options['file']['name']);
 
             curl_setopt($ch, CURLOPT_POSTFIELDS, ['upload' => $cURLFile]);
 
-            $contentLength = false;
+            $contentLength = False;
         }
 
         //-- Set headers
@@ -88,34 +88,34 @@ final class CurlClient
             $options['headers']['Content-Type'] = 'application/json';
         }
 
-        if (!isset($options['headers']['Content-Length']) && $contentLength !== false) {
+        if (!isset($options['headers']['Content-Length']) && $contentLength !== False) {
             $options['headers']['Content-Length'] = $contentLength;
         }
 
         foreach ($options['headers'] as $headerKey => $headerValue) {
-            $headers[] = $headerKey.':'.$headerValue;
+            $headers[] = $headerKey . ':' . $headerValue;
         }
         //--
 
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_HEADER, True);
 
         if (isset($options['query_params']) && !empty($options['query_params'])) {
             $query_params = http_build_query($options['query_params']);
-            $completeUrl .= (!empty($query_params) ? '?'.$query_params : '');
+            $completeUrl .= (!empty($query_params) ? '?' . $query_params : '');
         }
 
         curl_setopt($ch, CURLOPT_URL, $completeUrl);
 
         $result = curl_exec($ch);
 
-        if ($result === false) {
+        if ($result === False) {
             throw new Exception(curl_error($ch), curl_errno($ch));
         }
 
-        $responseHeaders  = substr($result, 0, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
-        $body             = substr($result, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
-        $response         = Response::parse($responseHeaders, $body);
+        $responseHeaders = substr($result, 0, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+        $body = substr($result, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+        $response = Response::parse($responseHeaders, $body);
 
         curl_close($ch);
 
@@ -123,7 +123,7 @@ final class CurlClient
 
         return $response;
     }
-    
+
     /**
      * @param Response $response
      *
@@ -134,7 +134,7 @@ final class CurlClient
         if ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600 || $response->getHttpCode() === 100) {
             if (isset($response->getBody()['messages'][0]['message'])) {
                 $eMessage = is_array($response->getBody()['messages'][0]['message']) ? implode(' - ', $response->getBody()['messages'][0]['message']) : $response->getBody()['messages'][0]['message'];
-                $eCode    = isset($response->getBody()['messages'][0]['code']) ? $response->getBody()['messages'][0]['code'] : $response->getHttpCode();
+                $eCode = isset($response->getBody()['messages'][0]['code']) ? $response->getBody()['messages'][0]['code'] : $response->getHttpCode();
 
                 throw new Exception($eMessage, $eCode);
             }
