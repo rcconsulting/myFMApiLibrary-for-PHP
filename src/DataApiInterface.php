@@ -97,11 +97,11 @@ interface DataApiInterface
      * @param null   $limit
      * @param array  $portals
      * @param array  $scripts
-     * @param null   $responseLayout
+     * @param string $responseLayout
      *
      * @return mixed
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null);
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null);
 
     /**
      * @param string $layout
