@@ -32,17 +32,17 @@ interface DataApiInterface
     public function logout();
 
     /**
-     * @param       $layout
+     * @param string $layout
      * @param array $data
      * @param array $scripts
      * @param array $portalData
      *
      * @return mixed
      */
-    public function createRecord($layout, array $data, array $scripts = [], array $portalData = []);
+    public function createRecord(string $layout, array $data, array $scripts = [], array $portalData = []);
 
     /**
-     * @param       $layout
+     * @param string $layout
      * @param       $recordId
      * @param array $data
      * @param null  $lastModificationId
@@ -52,34 +52,34 @@ interface DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function editRecord($layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = []);
+    public function editRecord(string $layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = []);
 
     /**
      * Duplicate an existing record
      *
-     * @param       $layout
+     * @param string $layout
      * @param       $recordId
      * @param array $scripts
      * @return mixed
      * @throws Exception
      */
-      public function duplicateRecord($layout, $recordId, array $scripts = []);
+      public function duplicateRecord(string $layout, $recordId, array $scripts = []);
 
       /**
        * Delete record by id
        *
-       * @param       $layout
+       * @param string $layout
        * @param       $recordId
        * @param array $scripts
        *
        * @throws Exception
        */
-      public function deleteRecord($layout, $recordId, array $scripts = []);
+      public function deleteRecord(string $layout, $recordId, array $scripts = []);
 
     /**
      * Get record detail
      *
-     * @param       $layout
+     * @param string $layout
      * @param       $recordId
      * @param array $portalOptions
      * @param array $scripts
@@ -88,36 +88,36 @@ interface DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecord($layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null);
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null);
 
     /**
-     * @param       $layout
-     * @param null  $sort
-     * @param null  $offset
-     * @param null  $limit
-     * @param array $portals
-     * @param array $scripts
-     * @param null  $responseLayout
+     * @param string $layout
+     * @param null   $sort
+     * @param null   $offset
+     * @param null   $limit
+     * @param array  $portals
+     * @param array  $scripts
+     * @param null   $responseLayout
      *
      * @return mixed
      */
-    public function getRecords($layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null);
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null);
 
     /**
-     * @param $layout
-     * @param $recordId
-     * @param $containerFieldName
-     * @param $containerFieldRepetition
-     * @param $filepath
-     * @param $filename
+     * @param string $layout
+     * @param        $recordId
+     * @param string $containerFieldName
+     * @param        $containerFieldRepetition
+     * @param string $filepath
+     * @param string $filename
      *
      * @return mixed
      */
-    public function uploadToContainer($layout, $recordId, $containerFieldName, $containerFieldRepetition, $filepath, $filename);
+    public function uploadToContainer(string $layout, $recordId, string $containerFieldName, $containerFieldRepetition, string $filepath, string $filename);
 
     /**
-     * @param        $layout
-     * @param        $query
+     * @param string $layout
+     * @param array  $query
      * @param null   $sort
      * @param null   $offset
      * @param null   $limit
@@ -127,26 +127,27 @@ interface DataApiInterface
      *
      * @return mixed
      */
-    public function findRecords($layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null);
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null);
 
     /**
      * Execute script alone
      *
-     * @param     $layout
-     * @param     $scriptName
-     * @param null $scriptParam
+     * @param string $layout
+     * @param string $scriptName
+     * @param string $scriptParam
+     *
      * @return mixed
      * @throws Exception
      */
-    public function executeScript($layout, $scriptName, $scriptParam = null);
+    public function executeScript(string $layout, string $scriptName, string $scriptParam = null);
 
     /**
-     * @param       $layout
-     * @param array $globalFields
+     * @param string $layout
+     * @param array  $globalFields
      *
      * @return mixed
      */
-    public function setGlobalFields($layout, array $globalFields);
+    public function setGlobalFields(string $layout, array $globalFields);
 
     /**
      * @return mixed
@@ -155,6 +156,7 @@ interface DataApiInterface
 
     /**
      * @param string $token
+     * @param        $date
      *
      * @return True|False
      */
@@ -209,11 +211,11 @@ interface DataApiInterface
     public function getScriptNames();
 
     /**
-     * @param $layout
-     * @param null $recordId
+     * @param string $layout
+     * @param null   $recordId
      *
      * @throws Exception
      * @return mixed
      */
-    public function getLayoutMetadata($layout, $recordId = null);
+    public function getLayoutMetadata(string $layout, $recordId = null);
 }
