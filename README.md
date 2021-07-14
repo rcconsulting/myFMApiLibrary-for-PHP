@@ -25,7 +25,15 @@ This fork is to bring greater out of the box compatibility to the myFMApiLibrary
 
 ## Requirements
 
+### Library version <2.1.0:
+
 - PHP >= 5.5
+- PHP cURL extension
+- PHP mbstring extension
+
+### Library version >=2.1.0:
+
+- PHP >= 7.1
 - PHP cURL extension
 - PHP mbstring extension
 
