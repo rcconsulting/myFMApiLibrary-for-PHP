@@ -151,11 +151,11 @@ try {
 
 $portals = [
     [
-        'portal' => 'Portal1',
+        'name'   => 'Portal1',
         'limit'  => 10
     ],
     [ 
-        'portal' => 'Portal2',
+        'name'   => 'Portal2',
         'offset' => 3
     ]
 ];
