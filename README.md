@@ -294,6 +294,7 @@ try {
 #### token usage
 ```php
 // useful when not explicitly logging into data api, but already have valid token
+// note that this implicitly sets the token retrieval date to now()
 $dataApi->setApiToken($token);
 // also supported
 $dataApi->setApiToken($token, $tokenDate); // + unix timestamp
