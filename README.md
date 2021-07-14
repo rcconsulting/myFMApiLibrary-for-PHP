@@ -314,3 +314,11 @@ if ($dataApi->refreshToken()) {
 // success
 }
 
+// Validate whether the session authorization token we're using ... is actually valid ... according to FileMaker Server
+if ($dataApi->validateTokenWithServer()){
+// token is valid according to FMS!
+} else {
+// token has expired according to FMS!
+}
+
+```
