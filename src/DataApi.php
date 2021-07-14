@@ -809,6 +809,27 @@ final class DataApi implements DataApiInterface
         return False;
       }
     }
+    
+    /**
+     * @return bool
+     * @throws Exception
+     */
+    public function validateTokenWithServer()
+    {
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/v1/validateSession",
+            [
+                'headers' => $this->getDefaultHeaders()
+            ]
+        );
+
+        if ($response->getBody()['messages'][0]['code'] === 0) {
+            return True;
+        } else {
+            return False;
+        }
+    }
 
     // METADATA OPERATIONS
 
