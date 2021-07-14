@@ -21,25 +21,26 @@ final class DataApi implements DataApiInterface
     protected $apiDatabase    = null;
     protected $apiToken       = null;
     protected $apiTokenDate   = null;
-    protected $convertToAssoc = true;
-    protected $dapiUserName = null;
-    protected $dapiUserPass = null;
+    protected $convertToAssoc = True;
+    protected $dapiUserName   = null;
+    protected $dapiUserPass   = null;
     protected $oAuthRequestId = null;
     protected $oAuthIdentifier = null;
-    protected $hasToken = False;
+    protected $hasToken       = False;
 
     /**
      * DataApi constructor
      *
-     * @param      $apiUrl
-     * @param      $apiDatabase
-     * @param bool $sslVerify
-     * @param      $apiUser
-     * @param      $apiPassword
+     * @param string $apiUrl
+     * @param string $apiDatabase
+     * @param string $apiUser
+     * @param string $apiPassword
+     * @param bool   $sslVerify
+     * @param bool   $forceLegacyHTTP
      *
      * @throws Exception
      */
-    public function __construct($apiUrl, $apiDatabase, $apiUser = null, $apiPassword = null, $sslVerify = true, $forceLegacyHTTP = false)
+    public function __construct(string $apiUrl, string $apiDatabase, string $apiUser = null, string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False)
     {
         $this->apiDatabase   = $this->prepareURLpart($apiDatabase);
         $this->ClientRequest = new CurlClient($apiUrl, $sslVerify, $forceLegacyHTTP);
@@ -52,8 +53,8 @@ final class DataApi implements DataApiInterface
     /**
      * Login to FileMaker API
      *
-     * @param $apiUsername
-     * @param $apiPassword
+     * @param string $apiUsername
+     * @param string $apiPassword
      *
      * @return $this
      * @throws Exception
@@ -77,8 +78,8 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * @param $oAuthRequestId
-     * @param $oAuthIdentifier
+     * @param string $oAuthRequestId
+     * @param string $oAuthIdentifier
      *
      * @return $this
      * @throws Exception
@@ -124,15 +125,15 @@ final class DataApi implements DataApiInterface
     // BASIC RECORD OPERATIONS
 
     /**
-     * @param       $layout
-     * @param array $data
-     * @param array $scripts
-     * @param array $portalData
+     * @param string $layout
+     * @param array  $data
+     * @param array  $scripts
+     * @param array  $portalData
      *
      * @return mixed
      * @throws Exception
      */
-    public function createRecord($layout, array $data, array $scripts = [], array $portalData = [])
+    public function createRecord(string $layout, array $data, array $scripts = [], array $portalData = [])
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [
@@ -160,17 +161,17 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * @param       $layout
-     * @param       $recordId
-     * @param array $data
-     * @param null  $lastModificationId
-     * @param array $portalData
-     * @param array $scripts
+     * @param string $layout
+     * @param        $recordId
+     * @param array  $data
+     * @param null   $lastModificationId
+     * @param array  $portalData
+     * @param array  $scripts
      *
      * @return mixed
      * @throws Exception
      */
-    public function editRecord($layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = [])
+    public function editRecord(string $layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = [])
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -200,13 +201,14 @@ final class DataApi implements DataApiInterface
     /**
      * Duplicate an existing record
      *
-     * @param       $layout
-     * @param       $recordId
-     * @param array $scripts
+     * @param string $layout
+     * @param        $recordId
+     * @param array  $scripts
+     *
      * @return mixed
      * @throws Exception
      */
-      public function duplicateRecord($layout, $recordId, array $scripts = [])
+      public function duplicateRecord(string $layout, $recordId, array $scripts = [])
       {
           $layout = $this->prepareURLpart($layout);
           $recordId = $this->prepareURLpart($recordId);
@@ -227,13 +229,13 @@ final class DataApi implements DataApiInterface
       /**
        * Delete record by id
        *
-       * @param       $layout
-       * @param       $recordId
-       * @param array $scripts
+       * @param string $layout
+       * @param        $recordId
+       * @param array  $scripts
        *
        * @throws Exception
        */
-      public function deleteRecord($layout, $recordId, array $scripts = [])
+      public function deleteRecord(string $layout, $recordId, array $scripts = [])
       {
           $layout = $this->prepareURLpart($layout);
           $recordId = $this->prepareURLpart($recordId);
@@ -250,16 +252,16 @@ final class DataApi implements DataApiInterface
     /**
      * Get record detail
      *
-     * @param       $layout
-     * @param       $recordId
-     * @param array $portalOptions
-     * @param array $scripts
-     * @param null  $responseLayout
+     * @param string $layout
+     * @param        $recordId
+     * @param array  $portalOptions
+     * @param array  $scripts
+     * @param null   $responseLayout
      *
      * @return mixed
      * @throws Exception
      */
-    public function getRecord($layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null)
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -297,18 +299,18 @@ final class DataApi implements DataApiInterface
     /**
      *  Get list of records
      *
-     * @param       $layout
-     * @param null  $sort
-     * @param null  $offset
-     * @param null  $limit
-     * @param array $portals
-     * @param array $scripts
-     * @param null  $responseLayout
+     * @param string $layout
+     * @param null   $sort
+     * @param null   $offset
+     * @param null   $limit
+     * @param array  $portals
+     * @param array  $scripts
+     * @param string $responseLayout
      *
      * @return mixed
      * @throws Exception
      */
-    public function getRecords($layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -348,18 +350,17 @@ final class DataApi implements DataApiInterface
     /**
      *  Upload files into container
      *
-     * @param $layout
-     * @param $recordId
-     * @param $containerFieldName
-     * @param $containerFieldRepetition
-     * @param $filepath
-     * @param null $filename
+     * @param string $layout
+     * @param        $recordId
+     * @param string $containerFieldName
+     * @param        $containerFieldRepetition
+     * @param string $filepath
+     * @param string $filename
      *
      * @return true
-     *
      * @throws Exception
      */
-    public function uploadToContainer($layout, $recordId, $containerFieldName, $containerFieldRepetition, $filepath, $filename = null)
+    public function uploadToContainer(string $layout, $recordId, string $containerFieldName, $containerFieldRepetition, string $filepath, string $filename = null)
     {
         if (empty($filename)) {
             $filename = pathinfo($filepath, PATHINFO_FILENAME).'.'.pathinfo($filepath, PATHINFO_EXTENSION);
@@ -388,19 +389,19 @@ final class DataApi implements DataApiInterface
     /**
      * Find records
      *
-     * @param       $layout
-     * @param array $query
-     * @param null  $sort
-     * @param null  $offset
-     * @param null  $limit
-     * @param array $portals
-     * @param array $scripts
-     * @param null  $responseLayout
+     * @param string $layout
+     * @param array  $query
+     * @param null   $sort
+     * @param null   $offset
+     * @param null   $limit
+     * @param array  $portals
+     * @param array  $scripts
+     * @param string $responseLayout
      *
      * @return mixed
      * @throws Exception
      */
-    public function findRecords($layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], $responseLayout = null)
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null)
     {
         $layout = $this->prepareURLpart($layout);
 
@@ -480,13 +481,14 @@ final class DataApi implements DataApiInterface
     /**
      * Execute script alone
      *
-     * @param     $layout
-     * @param     $scriptName
-     * @param null $scriptParam
+     * @param string $layout
+     * @param string $scriptName
+     * @param string $scriptParam
+     *
      * @return mixed
      * @throws Exception
      */
-    public function executeScript($layout, $scriptName, $scriptParam = null)
+    public function executeScript(string $layout, string $scriptName, string $scriptParam = null)
     {
         $layout = $this->prepareURLpart($layout);
         $scriptName = $this->prepareURLpart($scriptName);
@@ -529,13 +531,13 @@ final class DataApi implements DataApiInterface
     /**
      * Define one or multiple global fields
      *
-     * @param       $layout
-     * @param array $globalFields
+     * @param string $layout
+     * @param array  $globalFields
      *
      * @return mixed
      * @throws Exception
      */
-    public function setGlobalFields($layout, array $globalFields)
+    public function setGlobalFields(string $layout, array $globalFields)
     {
         $layout = $this->prepareURLpart($layout);
         $response = $this->ClientRequest->request(
@@ -582,7 +584,7 @@ final class DataApi implements DataApiInterface
     /**
      * applies rawurlencode to bits of user-supplied data which will be passed directly to the data api as part of the request path
      *
-     * @param string $data
+     * @param string|int $data
      *
      * @return string
      */
@@ -720,7 +722,7 @@ final class DataApi implements DataApiInterface
      *  Set API token manually
      *
      * @param string $token
-     * @param string $date
+     * @param        $date
      *
      * @return True|False
      */
@@ -906,13 +908,13 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * @param $layout
-     * @param null $recordId
+     * @param string $layout
+     * @param        $recordId
      *
      * @throws Exception
      * @return mixed
      */
-    public function getLayoutMetadata($layout, $recordId = null)
+    public function getLayoutMetadata(string $layout, $recordId = null)
     {
         // Prepare options
         $recordId = $this->prepareURLpart($recordId);
