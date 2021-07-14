@@ -2,15 +2,15 @@ FileMaker 17/18/19 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
 ## Team
-[Lesterius](https://www.lesterius.com "Lesterius") is first and foremost a collective of FileMaker and Web developers who are experts and passionated.\
+[Lesterius](https://www.lesterius.com "Lesterius") is a European FileMaker Business Alliance Platinum member that operates in Belgium, France, the Netherlands, Portugal and Spain. We are creative business consultants who co-create FileMaker Platform based solutions with our customers.\
 Sharing knowledge takes part of our DNA, that's why we developed this library to make the FileMaker Data API easy-to-use with PHP.\
 Break the limits of your application!\
 ![Lesterius logo](http://i1.createsend1.com/ei/r/29/D33/DFF/183501/csfinal/Mailing_Lesterius-logo.png "Lesterius")
 
-[Richard Carlton Consulting](https://rcconsulting.com/ "Richard Carlton Consulting") is a full-stack FileMaker development consultancy, serving clients globally with any and all FileMaker-related needs. We also publish the largest and most [complete video training](https://fmtraining.tv/) course for the FileMaker Community.
+[Richard Carlton Consulting](https://rcconsulting.com/ "Richard Carlton Consulting") is a full-stack Claris FileMaker development consultancy, serving clients globally with any and all FileMaker-related needs. We also publish the largest and most [complete video training](https://fmtraining.tv/) course for the FileMaker Community.
 
 ## Description
-This library is a PHP wrapper of the FileMaker Data API. It supports both 17/18/19 Data API commands, though if you use an 18 command (metadata commands for ex) on 17, it will fail.
+This library is a PHP wrapper for the Claris FileMaker Data API. It supports version 17/18/19 Data API commands, though if you use an 18 command (metadata commands for ex) on 17, it will fail.
 
 You will be able to use every functions like it's documented in your FileMaker server Data Api documentation (accessible via https://[your server domain]/fmi/data/apidoc).
 
@@ -18,17 +18,10 @@ General FileMaker document on the FMS 17 Data API is available [here](https://fm
 
 General FileMaker document on the FMS 18 Data API is available [here](https://fmhelp.filemaker.com/docs/18/en/dataapi/)
 
+General FileMaker document on the FMS 19 Data API is available [here](https://help.claris.com/en/data-api-guide/)
+
 ## Rationale
 This fork is to bring greater out of the box compatibility to the myFMApiLibrary, vs the Lesterius upstream code. We're immensely grateful for the hard work Lesterius put in.
-
-We submitted these changes to Lesterius, who have declined to accept the improvements. So, we forked it.
-
-A short list of improvements we've made:
-1. remove curl_escape from CurlClient, and wrap the data API path components in rawurlencode. curl_escape on OSX systems urlencodes the slashes of the path, which results in 404 errors when using the Data API on OSX.
-2. improve script handling so when you use a pre-execution or post-execution script, without a parameter, it does not send a blank parameter confusing the Data API (it causes dapi to reject the request).
-3. A filename parameter was added to the container data upload function, so when passing container data to DAPI from a webform you can tell FileMaker the file's name (it otherwise defaults to the php temp filename, which is not useful).
-4. Documentation improvements.
-5. TODO: implement polyfill for mbstring extension.  Until then, please ensure the mbstring extension is enabled in PHP.ini
 
 ## Requirements
 
@@ -39,14 +32,6 @@ A short list of improvements we've made:
 ## Installation
 
 The recommended way to install it is through [Composer](http://getcomposer.org).
-
-If you would like the GPL-3 version of the Library, please use the 1.x version as follows:
-
-```bash
-composer require rcconsulting/myfmapilibrary-for-php:1.*
-```
-
-If you would like the BSD-3 version of the Library, please use the 2.x (or newer) version as follows:
 
 ```bash
 composer require rcconsulting/myfmapilibrary-for-php:\>=2.0.0
@@ -59,15 +44,12 @@ use \RCConsulting\FileMakerApi\DataApi;
 require_once __DIR__ . '/vendor/autoload.php';
 ```
 
-# New in 2.0
-We raised the major version due to shipping this in a paid product, which requires we not retain lesterius in the namespacing. This would break all shipping code, so we raised the version. The library has also been relicensed from GPL-3 to BSD-3, to facilitate commercial development. RCC will continue to publish all improvements to the library here.
-
 # Usage
 
 ## Prepare your FileMaker solution
 
-1. Enable the FileMaker Data API option on your FileMaker server admin console.
-2. Create a specific user in your FileMaker database with the 'fmrest' privilege
+1. Enable the FileMaker Data API on your FileMaker Server Admin Console.
+2. Create a user in your FileMaker database, with a custom privilege set that has at least the 'fmrest' extended privilege
 3. Define records & layouts access for this user
 
 ## Use the library
@@ -76,6 +58,7 @@ We raised the major version due to shipping this in a paid product, which requir
 
 Login with credentials:
 ```php
+// Please note that the library does not currently support external data source authentication
 $dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
 $dataApi->login('filemaker api user', 'filemaker api password');
 ```
@@ -89,6 +72,7 @@ $dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com
 
 Login with oauth:
 ```php
+// Please note that RCC has not tested OAuth logins. We welcome any PR's which improve support.
 $dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data', 'MyDatabase');
 $dataApi->loginOauth('oAuthRequestId', 'oAuthIdentifier');
 ```
@@ -96,8 +80,6 @@ $dataApi->loginOauth('oAuthRequestId', 'oAuthIdentifier');
 ### Logout
 
 ```php
-// Call login method first
-
 $dataApi->logout();
 ```
 
@@ -156,7 +138,7 @@ try {
 // Call login method first
 
 try {
-  $recordId = $dataApi->editRecord('layout name', $recordId, $data, $lastModificationId, $$portalData, $scripts);
+  $recordId = $dataApi->editRecord('layout name', $recordId, $data, $lastModificationId, $portalData, $scripts);
 } catch(\Exception $e) {
   // handle exception
 }
