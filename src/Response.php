@@ -109,6 +109,8 @@ final class Response
         // The response code is special as there is no key. We handle it differently
         $statusHeader = [];
         foreach ($headers as $index => $header) {
+            // because the response code will never have a "value" (the entire response code "HTTP/2 200 OK" IS the array index key),
+            // the following "if/break" results in this foreach terminating after processing the status code and setting it below
             if (isset($header[1])) {
                 break;
             }
@@ -124,7 +126,7 @@ final class Response
             if (!isset($header[1])) {
                 continue;
             }
-
+            // put the rest of the headers into "header name as key" => "value" format
             $processedHeaders[$header[0]] = $header[1];
         }
 
