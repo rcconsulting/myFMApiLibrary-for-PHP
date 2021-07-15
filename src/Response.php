@@ -15,7 +15,7 @@ final class Response
      */
     private $headers = [];
     /**
-     * @var string
+     * @var array
      */
     private $body = [];
     /**
