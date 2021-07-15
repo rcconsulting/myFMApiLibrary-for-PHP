@@ -19,26 +19,24 @@ final class Response
      */
     private $body;
     /**
-     * @var string
+     * @var int
      */
-    private $responseType;
-
-    const RESPONSE_TYPE_JSON = 'json';
-    const RESPONSE_TYPE_TEXT = 'text';
+    private $responseCodeHTTP = null;
 
     /**
      * Response constructor.
      *
-     * @param array  $headers
-     * @param string $body
+     * @param array $headers
+     * @param array $body
      *
      * @throws Exception
      */
-    public function __construct($headers, $body)
+    public function __construct(array $headers, array $body)
     {
-        $this->setHeaders($headers);
-        $this->body         = $body;
-        $this->responseType = is_array($body) ? self::RESPONSE_TYPE_JSON : self::RESPONSE_TYPE_TEXT;
+        $this->headers = $headers;
+        $this->body = $body;
+        // parses "HTTP/1.1 200 OK" and returns the 200
+        $this->responseCodeHTTP = (int)explode(" ", $this->getHeader("Status"))[1];
     }
 
     /**
@@ -48,26 +46,9 @@ final class Response
      * @return self
      * @throws Exception
      */
-    public static function parse($headers, $body)
+    public static function parse(string $headers, string $body)
     {
         return new self(self::parseHeaders($headers), self::parseBody($body));
-    }
-
-    /**
-     * @param array $headers
-     *
-     * @return Response
-     * @throws Exception
-     */
-    public function setHeaders($headers)
-    {
-        if (!is_array($headers)) {
-            throw new Exception();
-        }
-
-        $this->headers = $headers;
-
-        return $this;
     }
 
     /**
@@ -76,47 +57,38 @@ final class Response
      * @return mixed
      * @throws Exception
      */
-    public function getHeader($header)
+    public function getHeader(string $header)
     {
         if (isset($this->headers[$header])) {
             return $this->headers[$header];
+        } else {
+            throw new Exception("Header not found");
         }
-
-        throw new Exception("Header not found");
     }
 
     /**
      * @return int
-     * @throws Exception
      */
     public function getHttpCode()
     {
-        $httpHeader = $this->getHeader('Status');
-        $httpHeader = explode(" ", $httpHeader);
-
-        return (int)$httpHeader[1];
+        return $this->responseCodeHTTP;
     }
 
     /**
-     * @param bool $raw
-     *
-     * @return string
-     */
-    public function getBody($raw = false)
-    {
-        if (!$raw) {
-            return $this->body;
-        }
-
-        return ($this->responseType === self::RESPONSE_TYPE_JSON) ? json_encode($this->body) : $this->body;
-    }
-
-    /**
-     * @param $headers
-     *
      * @return array
      */
-    private static function parseHeaders($headers)
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    /**
+     * @param string $headers
+     *
+     * @return array
+     * @throws Exception
+     */
+    private static function parseHeaders(string $headers)
     {
         // We convert the raw header string into an array
         $headers = explode("\n", $headers);
@@ -152,7 +124,7 @@ final class Response
             if (!isset($header[1])) {
                 continue;
             }
-            
+
             $processedHeaders[$header[0]] = $header[1];
         }
 
@@ -160,18 +132,14 @@ final class Response
     }
 
     /**
-     * @param $body
+     * @param string $body
      *
-     * @return mixed
+     * @return array
+     * @throws Exception
      */
-    private static function parseBody($body)
+    private static function parseBody(string $body)
     {
-        return self::isJson($body) ? json_decode($body, true) : $body;
+        return json_decode($body, true, JSON_THROW_ON_ERROR);
     }
 
-
-    private static function isJson($string)
-    {
-        return json_decode($string, true) !== null;
-    }
 }
