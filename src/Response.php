@@ -17,7 +17,7 @@ final class Response
     /**
      * @var string
      */
-    private $body;
+    private $body = [];
     /**
      * @var int
      */
