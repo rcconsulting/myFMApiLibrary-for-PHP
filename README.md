@@ -313,3 +313,7 @@ if ($dataApi->validateTokenWithServer()){
 }
 
 ```
+
+## ToDo:
+
+- replace all curl with guzzle, while adding [certainty](https://github.com/paragonie/certainty "Certainty") and [monolog](https://github.com/Seldaek/monolog "monolog")
