@@ -4,7 +4,7 @@
     "description": "FileMaker 17/18/19 Data API PHP wrapper",
     "Keywords": ["Claris", "FileMaker", "Data API", "API", "REST", "Database", "Wrapper"],
     "license": "BSD-3-Clause",
-    "version": "2.0.3",
+    "version": "2.1.0",
     "minimum-stability": "stable",
     "authors": [
       {
@@ -30,7 +30,7 @@
         }
     },
     "require": {
-        "php" : ">=5.5.0",
+        "php" : ">=7.1.0",
         "ext-curl": "*",
         "ext-mbstring": "*"
     },
