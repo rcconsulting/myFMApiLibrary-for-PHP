@@ -492,22 +492,22 @@ final class DataApi implements DataApiInterface
     {
         $layout = $this->prepareURLpart($layout);
         $scriptName = $this->prepareURLpart($scriptName);
-        // Prepare options
-        $queryParams = [];
-        // optional parameters
-        if (!empty($scriptParam)) {
+        
+        if (!empty($scriptParam)){
+            // Prepare options
+            $queryParams = [];
+            // optional parameters
             $queryParams['script.param'] = $scriptParam;
-        }
-        if (!empty($scriptParam)) {
+            // set up parameters before sending to data api
             $options = [
-                'headers' => $this->getDefaultHeaders(),
-                'query_params' => array_merge(
+                'headers'       => $this->getDefaultHeaders(),
+                'query_params'  => array_merge(
                     $queryParams
                 ),
             ];
         } else {
             $options = [
-                'headers' => $this->getDefaultHeaders()
+            'headers'           => $this->getDefaultHeaders()
             ];
         }
 
