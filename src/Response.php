@@ -19,6 +19,14 @@ final class Response
      */
     private $body = [];
     /**
+     * @var array
+     */
+    private $response = [];
+    /**
+     * @var array
+     */
+    private $records = [];
+    /**
      * @var int
      */
     private $responseCodeHTTP = null;
@@ -35,6 +43,11 @@ final class Response
     {
         $this->headers = $headers;
         $this->body = $body;
+        $this->response = $this->body['response'];
+        //checks to see if data even exists in this response type, logins do not, for example
+        if (isset($this->response['data']) || array_key_exists('data', $this->response)) {
+            $this->records = $this->response['data'];
+        }
         // parses "HTTP/1.1 200 OK" and returns the 200
         $this->responseCodeHTTP = (int)explode(" ", $this->getHeader("Status"))[1];
     }
@@ -80,6 +93,46 @@ final class Response
     public function getBody()
     {
         return $this->body;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRecords()
+    {
+        return $this->records;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRawResponse()
+    {
+        return $this->response;
+    }
+
+    /**
+     * @return string
+     */
+    public function getScriptResult()
+    {
+        if (isset($this->response['scriptResult']) || array_key_exists('scriptResult', $this->response)){
+            return $this->response['scriptResult'];
+        } else {
+            return;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getScriptError()
+    {
+        if (isset($this->response['scriptError']) || array_key_exists('scriptError', $this->response)){
+            return $this->response['scriptError'];
+        } else {
+            return;
+        }
     }
 
     /**
