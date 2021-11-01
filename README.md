@@ -88,6 +88,8 @@ $dataApi->loginOauth('oAuthRequestId', 'oAuthIdentifier');
 ### Logout
 
 ```php
+// It is highly recommended to log out at each script or large process end. The Data API tokens last 15 minutes after last use, and so will hold a slot open for 15 minutes after your last connection if you do not clean up after yourself. Additionally, logout() does not destroy the DataAPI object you created (via new) previously, but it does clean out any authorization tokens from the object.
+
 $dataApi->logout();
 ```
 
