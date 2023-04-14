@@ -131,7 +131,7 @@ final class Response
         if (isset($this->response['scriptError']) || array_key_exists('scriptError', $this->response)){
             return $this->response['scriptError'];
         } else {
-             return '';
+            return '';
         }
     }
 
