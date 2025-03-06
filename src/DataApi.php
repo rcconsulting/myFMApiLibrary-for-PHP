@@ -3,6 +3,7 @@
 namespace RCConsulting\FileMakerApi;
 
 use RCConsulting\FileMakerApi\Exception\Exception;
+use RCConsulting\FileMakerApi\Response;
 
 /**
  * Class DataApi
@@ -27,6 +28,7 @@ final class DataApi implements DataApiInterface
     protected $oAuthRequestId = null;
     protected $oAuthIdentifier = null;
     protected $hasToken = False;
+    protected $returnResponseObject = False;
 
     /**
      * DataApi constructor
@@ -40,10 +42,11 @@ final class DataApi implements DataApiInterface
      *
      * @throws Exception
      */
-    public function __construct(string $apiUrl, string $apiDatabase, string $apiUser = null, string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False)
+    public function __construct(string $apiUrl, string $apiDatabase, string $apiUser = null, string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False, bool $returnResponseObject = False)
     {
         $this->apiDatabase = $this->prepareURLpart($apiDatabase);
         $this->ClientRequest = new CurlClient($apiUrl, $sslVerify, $forceLegacyHTTP);
+        $this->returnResponseObject = $returnResponseObject;
 
         if (!is_null($apiUser)) {
             $this->login($apiUser, $apiPassword);
@@ -71,7 +74,7 @@ final class DataApi implements DataApiInterface
                 'json' => [],
             ]
         );
-        $this->setApiToken($response->getBody()['response']['token']);
+        $this->setApiToken($response->getRawResponse()['token']);
         $this->storeCredentials($apiUsername, $apiPassword);
 
         return $this;
@@ -98,7 +101,7 @@ final class DataApi implements DataApiInterface
                 'json' => [],
             ]
         );
-        $this->setApiToken($response->getBody()['response']['token']);
+        $this->setApiToken($response->getRawResponse()['token']);
         $this->storeOAuth($oAuthRequestId, $oAuthIdentifier);
 
         return $this;
@@ -156,8 +159,11 @@ final class DataApi implements DataApiInterface
                 ),
             ]
         );
-
-        return $response->getBody()['response']['recordId'];
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getRecords()['response']['recordId'];
+        }
     }
 
     /**
@@ -194,8 +200,11 @@ final class DataApi implements DataApiInterface
                 ),
             ]
         );
-
-        return $response->getBody()['response']['modId'];
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getRawResponse()['modId'];
+        }
     }
 
     /**
@@ -223,7 +232,11 @@ final class DataApi implements DataApiInterface
                 ),
             ]
         );
-        return $response->getBody()['response']['recordId'];
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getRawResponse()['recordId'];
+        }
     }
 
     /**
@@ -292,8 +305,11 @@ final class DataApi implements DataApiInterface
                 ),
             ]
         );
-
-        return $response->getBody()['response']['data'][0];
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getRecords()[0];
+        }
     }
 
     /**
@@ -343,8 +359,11 @@ final class DataApi implements DataApiInterface
                 ),
             ]
         );
-
-        return $response->getBody()['response']['data'];
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getRecords();
+        }
     }
 
     /**
@@ -382,7 +401,6 @@ final class DataApi implements DataApiInterface
                 ]
             ]
         );
-
         return True;
     }
 
@@ -474,8 +492,11 @@ final class DataApi implements DataApiInterface
                 throw $e;
             }
         }
-
-        return $response->getBody()['response']['data'];
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getRecords();
+        }
     }
 
     /**
@@ -492,7 +513,7 @@ final class DataApi implements DataApiInterface
     {
         $layout = $this->prepareURLpart($layout);
         $scriptName = $this->prepareURLpart($scriptName);
-        
+
         if (!empty($scriptParam)){
             // Prepare options
             $queryParams = [];
@@ -507,7 +528,7 @@ final class DataApi implements DataApiInterface
             ];
         } else {
             $options = [
-            'headers'           => $this->getDefaultHeaders()
+                'headers'           => $this->getDefaultHeaders()
             ];
         }
 
@@ -517,14 +538,18 @@ final class DataApi implements DataApiInterface
             "/v1/databases/$this->apiDatabase/layouts/$layout/script/$scriptName",
             $options
         );
-        if ($response->getBody()['response']['scriptError'] == 0) {
-            if (array_key_exists('scriptResult', $response->getBody()['response'])) {
-                return $response->getBody()['response']['scriptResult'];
-            } else {
-                return True;
-            }
+        if ($this->returnResponseObject) {
+            return $response;
         } else {
-            return $response->getBody()['response']['scriptError'];
+            if ($response->getScriptError() == 0) {
+                if (array_key_exists('scriptResult', $response->getRawResponse())) {
+                    return $response->getScriptResult();
+                } else {
+                    return True;
+                }
+            } else {
+                return $response->getScriptError();
+            }
         }
     }
 
@@ -550,8 +575,11 @@ final class DataApi implements DataApiInterface
                 ],
             ]
         );
-
-        return $response->getBody();
+        if ($this->returnResponseObject) {
+            return $response;
+        } else {
+            return $response->getBody();
+        }
     }
 
     // UTILITY FUNCTIONS
@@ -856,7 +884,7 @@ final class DataApi implements DataApiInterface
                 'json' => []
             ]
         );
-        return $response->getBody()['response'];
+        return $response->getRawResponse();
     }
 
     /**
@@ -874,7 +902,7 @@ final class DataApi implements DataApiInterface
                 'json' => []
             ]
         );
-        return $response->getBody()['response'];
+        return $response->getRawResponse();
     }
 
     /**
@@ -892,7 +920,7 @@ final class DataApi implements DataApiInterface
                 'json' => []
             ]
         );
-        return $response->getBody()['response'];
+        return $response->getRawResponse();
     }
 
     /**
@@ -910,7 +938,7 @@ final class DataApi implements DataApiInterface
                 'json' => []
             ]
         );
-        return $response->getBody()['response'];
+        return $response->getRawResponse();
     }
 
     /**
@@ -941,7 +969,7 @@ final class DataApi implements DataApiInterface
                 ),
             ]
         );
-        return $response->getBody()['response'];
+        return $response->getRawResponse();
     }
 
     /**
