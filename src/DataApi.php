@@ -640,8 +640,8 @@ final class DataApi implements DataApiInterface
                 case self::SCRIPT_PREREQUEST:
                 case self::SCRIPT_PRESORT:
                     $scriptSuffix = $script['type'];
-                    $preparedScript['script' . $scriptSuffix] = $script['name'];
-                    $preparedScript['script' . $scriptSuffix . '.param'] = $script['param'];
+                    $preparedScript['script.' . $scriptSuffix] = $script['name'];
+                    $preparedScript['script.' . $scriptSuffix . '.param'] = $script['param'];
                     break;
                 case self::SCRIPT_POSTREQUEST:
                     $preparedScript['script'] = $script['name'];
