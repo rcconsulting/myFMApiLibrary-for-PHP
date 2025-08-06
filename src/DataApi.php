@@ -277,7 +277,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, int $dateFormat = 0)
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -330,7 +330,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = 0)
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -424,7 +424,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = 0)
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
     {
         $layout = $this->prepareURLpart($layout);
 
@@ -699,11 +699,11 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * @param array $dateFormat
+     * @param int $dateFormat
      *
      * @return int
      */
-    private function prepareDateFormat(array $dateFormat)
+    private function prepareDateFormat($dateFormat)
     {
         switch ($dateFormat) {
             case self::DATE_FILELOCALE:
