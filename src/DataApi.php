@@ -17,6 +17,9 @@ final class DataApi implements DataApiInterface
     const SCRIPT_PREREQUEST = 'prerequest';
     const SCRIPT_PRESORT = 'presort';
     const SCRIPT_POSTREQUEST = 'postrequest';
+    const DATE_DEFAULT = 0;
+    const DATE_FILELOCALE = 1;
+    const DATE_ISO8601 = 2;
 
     protected $ClientRequest = null;
     protected $apiDatabase = null;
@@ -274,7 +277,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null)
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -301,7 +304,8 @@ final class DataApi implements DataApiInterface
                 'headers' => $this->getDefaultHeaders(),
                 'query_params' => array_merge(
                     $queryParams,
-                    $this->prepareScriptOptions($scripts)
+                    $this->prepareScriptOptions($scripts),
+                    $this->prepareDateFormat($dateFormat)
                 ),
             ]
         );
@@ -326,7 +330,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null)
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -355,7 +359,8 @@ final class DataApi implements DataApiInterface
                 'query_params' => array_merge(
                     $jsonOptions,
                     $this->prepareScriptOptions($scripts),
-                    $this->preparePortalsOptions($portals)
+                    $this->preparePortalsOptions($portals),
+                    $this->prepareDateFormat($dateFormat)
                 ),
             ]
         );
@@ -419,7 +424,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null)
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
     {
         $layout = $this->prepareURLpart($layout);
 
@@ -481,7 +486,8 @@ final class DataApi implements DataApiInterface
                     'json' => array_merge(
                         $jsonOptions,
                         $this->prepareScriptOptions($scripts),
-                        $this->preparePortalsOptions($portals)
+                        $this->preparePortalsOptions($portals),
+                        $this->prepareDateFormat($dateFormat)
                     ),
                 ]
             );
@@ -690,6 +696,23 @@ final class DataApi implements DataApiInterface
         $options['portal'] = $portalList;
 
         return $options;
+    }
+
+    /**
+     * @param int $dateFormat
+     *
+     * @return int
+     */
+    private function prepareDateFormat($dateFormat)
+    {
+        switch ($dateFormat) {
+            case self::DATE_FILELOCALE:
+                return 1;
+            case self::DATE_ISO8601:
+                return 2;
+            default:
+                return 0;
+        }
     }
 
     // CREDENTIAL MANAGEMENT
