@@ -277,7 +277,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, int $dateFormat = null)
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -297,16 +297,25 @@ final class DataApi implements DataApiInterface
             $queryParams['layout.response'] = $responseLayout;
         }
 
+        if (!is_null($dateFormat)){
+            $queryParams = array_merge(
+                $queryParams,
+                $this->prepareScriptOptions($scripts),
+                $this->prepareDateFormat($dateFormat)
+            );
+                } else {
+            $queryParams = array_merge(
+                $queryParams,
+                $this->prepareScriptOptions($scripts)
+            );
+        }
+
         $response = $this->ClientRequest->request(
             'GET',
             "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
             [
                 'headers' => $this->getDefaultHeaders(),
-                'query_params' => array_merge(
-                    $queryParams,
-                    $this->prepareScriptOptions($scripts),
-                    $this->prepareDateFormat($dateFormat)
-                ),
+                'query_params' => $queryParams,
             ]
         );
         if ($this->returnResponseObject) {
@@ -351,17 +360,27 @@ final class DataApi implements DataApiInterface
             $jsonOptions['layout.response'] = $responseLayout;
         }
 
+        if (!is_null($dateFormat)){
+            $jsonOptions = array_merge(
+                $jsonOptions,
+                $this->prepareScriptOptions($scripts),
+                $this->preparePortalsOptions($portals),
+                $this->prepareDateFormat($dateFormat)
+            );
+        } else {
+            $jsonOptions = array_merge(
+                $jsonOptions,
+                $this->prepareScriptOptions($scripts),
+                $this->preparePortalsOptions($portals)
+            );
+        }
+
         $response = $this->ClientRequest->request(
             'GET',
             "/v1/databases/$this->apiDatabase/layouts/$layout/records",
             [
                 'headers' => $this->getDefaultHeaders(),
-                'query_params' => array_merge(
-                    $jsonOptions,
-                    $this->prepareScriptOptions($scripts),
-                    $this->preparePortalsOptions($portals),
-                    $this->prepareDateFormat($dateFormat)
-                ),
+                'query_params' => $jsonOptions,
             ]
         );
         if ($this->returnResponseObject) {
@@ -477,18 +496,28 @@ final class DataApi implements DataApiInterface
             }
         }
 
+        if (!is_null($dateFormat)){
+            $jsonOptions = array_merge(
+                $jsonOptions,
+                $this->prepareScriptOptions($scripts),
+                $this->preparePortalsOptions($portals),
+                $this->prepareDateFormat($dateFormat)
+            );
+        } else {
+            $jsonOptions = array_merge(
+                $jsonOptions,
+                $this->prepareScriptOptions($scripts),
+                $this->preparePortalsOptions($portals)
+            );
+        }
+
         try {
             $response = $this->ClientRequest->request(
                 'POST',
                 "/v1/databases/$this->apiDatabase/layouts/$layout/_find",
                 [
                     'headers' => $this->getDefaultHeaders(),
-                    'json' => array_merge(
-                        $jsonOptions,
-                        $this->prepareScriptOptions($scripts),
-                        $this->preparePortalsOptions($portals),
-                        $this->prepareDateFormat($dateFormat)
-                    ),
+                    'json' => $jsonOptions,
                 ]
             );
         } catch (Exception $e) {
@@ -703,7 +732,7 @@ final class DataApi implements DataApiInterface
      *
      * @return int
      */
-    private function prepareDateFormat($dateFormat)
+    private function prepareDateFormat(int $dateFormat)
     {
         switch ($dateFormat) {
             case self::DATE_FILELOCALE:
