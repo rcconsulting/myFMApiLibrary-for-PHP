@@ -9,7 +9,7 @@ use RCConsulting\FileMakerApi\Exception\Exception;
  *
  * @package RCConsulting\DataApi
  */
-final class CurlClient
+final class CurlClient implements HttpClientInterface
 {
     private $sslVerify = False;
     private $baseUrl = null;
@@ -39,7 +39,7 @@ final class CurlClient
      * @return Response
      * @throws Exception
      */
-    public function request(string $method, string $url, array $options)
+    public function request(string $method, string $url, array $options): Response
     {
         $ch = curl_init();
         if ($ch === False) {
