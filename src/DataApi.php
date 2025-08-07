@@ -3,7 +3,7 @@
 namespace RCConsulting\FileMakerApi;
 
 use RCConsulting\FileMakerApi\Exception\Exception;
-use RCConsulting\FileMakerApi\Response;
+use ValueError;
 
 /**
  * Class DataApi
@@ -11,49 +11,79 @@ use RCConsulting\FileMakerApi\Response;
  */
 final class DataApi implements DataApiInterface
 {
-    const FILEMAKER_NO_RECORDS = 401;
-    const FILEMAKER_API_TOKEN_EXPIRED = 952;
+    const int FILEMAKER_NO_RECORDS = 401;
+    const int FILEMAKER_API_TOKEN_EXPIRED = 952;
 
-    const SCRIPT_PREREQUEST = 'prerequest';
-    const SCRIPT_PRESORT = 'presort';
-    const SCRIPT_POSTREQUEST = 'postrequest';
-    const DATE_DEFAULT = 0;
-    const DATE_FILELOCALE = 1;
-    const DATE_ISO8601 = 2;
+    const string SCRIPT_PREREQUEST = 'prerequest';
+    const string SCRIPT_PRESORT = 'presort';
+    const string SCRIPT_POSTREQUEST = 'postrequest';
+    const int DATE_DEFAULT = 0;
+    const int DATE_FILELOCALE = 1;
+    const int DATE_ISO8601 = 2;
 
-    protected $ClientRequest = null;
-    protected $apiDatabase = null;
-    protected $apiToken = null;
-    protected $apiTokenDate = null;
-    protected $convertToAssoc = True;
-    protected $dapiUserName = null;
-    protected $dapiUserPass = null;
-    protected $oAuthRequestId = null;
-    protected $oAuthIdentifier = null;
-    protected $hasToken = False;
-    protected $returnResponseObject = False;
+    protected HttpClientInterface $ClientRequest;
+    protected ?string $apiDatabase = null;
+    protected ?string $apiToken = null;
+    protected ?string $apiTokenDate = null;
+    protected bool $convertToAssoc = True;
+    protected ?string $dapiUserName = null;
+    protected ?string $dapiUserPass = null;
+    protected ?string $oAuthRequestId = null;
+    protected ?string $oAuthIdentifier = null;
+    protected bool $hasToken = False;
+    protected bool $returnResponseObject = False;
 
     /**
      * DataApi constructor
      *
      * @param string $apiUrl
      * @param string $apiDatabase
-     * @param string $apiUser
-     * @param string $apiPassword
+     * @param string|null $apiUser
+     * @param string|null $apiPassword
      * @param bool $sslVerify
      * @param bool $forceLegacyHTTP
+     * @param bool $returnResponseObject
+     * @param HttpClientType|string $httpClient HTTP client implementation to use (HttpClientType enum or string 'curl'/'guzzle')
      *
      * @throws Exception
      */
-    public function __construct(string $apiUrl, string $apiDatabase, string $apiUser = null, string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False, bool $returnResponseObject = False)
+    public function __construct(string $apiUrl, string $apiDatabase, ?string $apiUser = null, ?string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False, bool $returnResponseObject = False, HttpClientType|string $httpClient = HttpClientType::CURL)
     {
         $this->apiDatabase = $this->prepareURLpart($apiDatabase);
-        $this->ClientRequest = new CurlClient($apiUrl, $sslVerify, $forceLegacyHTTP);
+        $this->ClientRequest = $this->createHttpClient($httpClient, $apiUrl, $sslVerify, $forceLegacyHTTP);
         $this->returnResponseObject = $returnResponseObject;
 
         if (!is_null($apiUser)) {
             $this->login($apiUser, $apiPassword);
         }
+    }
+
+    /**
+     * Create HTTP client instance based on the specified type
+     *
+     * @param HttpClientType|string $httpClient The HTTP client type (enum or string 'curl'/'guzzle')
+     * @param string $apiUrl The base URL for the FileMaker Data API
+     * @param bool $sslVerify Whether to verify SSL certificates
+     * @param bool $forceLegacyHTTP Whether to force HTTP/1.1 instead of HTTP/2
+     *
+     * @return HttpClientInterface
+     * @throws Exception When an invalid HTTP client type is specified
+     */
+    private function createHttpClient(HttpClientType|string $httpClient, string $apiUrl, bool $sslVerify, bool $forceLegacyHTTP): HttpClientInterface
+    {
+        // Convert string to enum if necessary
+        if (is_string($httpClient)) {
+            try {
+                $httpClient = HttpClientType::fromString($httpClient);
+            } catch (ValueError $e) {
+                throw new Exception($e->getMessage());
+            }
+        }
+
+        return match ($httpClient) {
+            HttpClientType::CURL => new CurlClient($apiUrl, $sslVerify, $forceLegacyHTTP),
+            HttpClientType::GUZZLE => new GuzzleClient($apiUrl, $sslVerify, $forceLegacyHTTP),
+        };
     }
 
     /**
@@ -65,7 +95,7 @@ final class DataApi implements DataApiInterface
      * @return $this
      * @throws Exception
      */
-    public function login(string $apiUsername, string $apiPassword)
+    public function login(string $apiUsername, string $apiPassword): DataApi
     {
         $response = $this->ClientRequest->request(
             'POST',
@@ -90,7 +120,7 @@ final class DataApi implements DataApiInterface
      * @return $this
      * @throws Exception
      */
-    public function loginOauth(string $oAuthRequestId, string $oAuthIdentifier)
+    public function loginOauth(string $oAuthRequestId, string $oAuthIdentifier): DataApi
     {
         $response = $this->ClientRequest->request(
             'POST',
@@ -139,7 +169,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function createRecord(string $layout, array $data, array $scripts = [], array $portalData = [])
+    public function createRecord(string $layout, array $data, array $scripts = [], array $portalData = []): mixed
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [
@@ -180,7 +210,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function editRecord(string $layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = [])
+    public function editRecord(string $layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = []): mixed
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -220,7 +250,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function duplicateRecord(string $layout, $recordId, array $scripts = [])
+    public function duplicateRecord(string $layout, $recordId, array $scripts = []): mixed
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -251,7 +281,7 @@ final class DataApi implements DataApiInterface
      *
      * @throws Exception
      */
-    public function deleteRecord(string $layout, $recordId, array $scripts = [])
+    public function deleteRecord(string $layout, $recordId, array $scripts = []): void
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -273,11 +303,11 @@ final class DataApi implements DataApiInterface
      * @param array $portalOptions
      * @param array $scripts
      * @param null $responseLayout
-     *
+     * @param int|null $dateFormat
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, int $dateFormat = null)
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, ?int $dateFormat = null): mixed
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -334,12 +364,12 @@ final class DataApi implements DataApiInterface
      * @param null $limit
      * @param array $portals
      * @param array $scripts
-     * @param string $responseLayout
-     *
-     * @return mixed
+     * @param string|null $responseLayout
+     * @param int $dateFormat
+     * @return array|\Response
      * @throws Exception
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT): array|\Response
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -398,12 +428,12 @@ final class DataApi implements DataApiInterface
      * @param string $containerFieldName
      * @param        $containerFieldRepetition
      * @param string $filepath
-     * @param string $filename
+     * @param string|null $filename
      *
      * @return True
      * @throws Exception
      */
-    public function uploadToContainer(string $layout, $recordId, string $containerFieldName, $containerFieldRepetition, string $filepath, string $filename = null)
+    public function uploadToContainer(string $layout, $recordId, string $containerFieldName, $containerFieldRepetition, string $filepath, ?string $filename = null): bool
     {
         if (empty($filename)) {
             $filename = pathinfo($filepath, PATHINFO_FILENAME) . '.' . pathinfo($filepath, PATHINFO_EXTENSION);
@@ -438,12 +468,12 @@ final class DataApi implements DataApiInterface
      * @param null $limit
      * @param array $portals
      * @param array $scripts
-     * @param string $responseLayout
-     *
+     * @param string|null $responseLayout
+     * @param int $dateFormat
      * @return mixed
      * @throws Exception
      */
-    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT)
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT): mixed
     {
         $layout = $this->prepareURLpart($layout);
 
@@ -462,7 +492,7 @@ final class DataApi implements DataApiInterface
                 }
 
                 if (isset($queryItem['options']['omit'])) {
-                    if ($queryItem['options']['omit'] == True || $queryItem['options']['omit'] == "true") {
+                    if ($queryItem['options']['omit'] || $queryItem['options']['omit'] == "true") {
                         $preparedQuery[] = array_merge($item, ['omit' => "true"]);
                     } else {
                         $preparedQuery[] = array_merge($item, ['omit' => "false"]);
@@ -539,12 +569,12 @@ final class DataApi implements DataApiInterface
      *
      * @param string $layout
      * @param string $scriptName
-     * @param string $scriptParam
+     * @param string|null $scriptParam
      *
-     * @return mixed
+     * @return string|true|\Response
      * @throws Exception
      */
-    public function executeScript(string $layout, string $scriptName, string $scriptParam = null)
+    public function executeScript(string $layout, string $scriptName, ?string $scriptParam = null): string|true|\Response
     {
         $layout = $this->prepareURLpart($layout);
         $scriptName = $this->prepareURLpart($scriptName);
@@ -594,10 +624,10 @@ final class DataApi implements DataApiInterface
      * @param string $layout
      * @param array $globalFields
      *
-     * @return mixed
+     * @return array|\Response
      * @throws Exception
      */
-    public function setGlobalFields(string $layout, array $globalFields)
+    public function setGlobalFields(string $layout, array $globalFields): array|\Response
     {
         $layout = $this->prepareURLpart($layout);
         $response = $this->ClientRequest->request(
@@ -622,7 +652,7 @@ final class DataApi implements DataApiInterface
     /**
      *  Set API token in request headers
      *
-     * @return Header|False
+     * @return string[]|False
      */
     private function getDefaultHeaders()
     {
@@ -730,18 +760,22 @@ final class DataApi implements DataApiInterface
     /**
      * @param int $dateFormat
      *
-     * @return int
+     * @return array
      */
     private function prepareDateFormat(int $dateFormat)
     {
+        $payload = [];
         switch ($dateFormat) {
             case self::DATE_FILELOCALE:
-                return 1;
+                $payload['dateformats'] = 1;
+                break;
             case self::DATE_ISO8601:
-                return 2;
+                $payload['dateformats'] = 2;
+                break;
             default:
-                return 0;
+                $payload['dateformats'] = 0;
         }
+        return $payload;
     }
 
     // CREDENTIAL MANAGEMENT
@@ -876,7 +910,7 @@ final class DataApi implements DataApiInterface
     /**
      * will refresh the token IF token was retreived via username/password login call sometime in the past
      *
-     * @return True/False
+     * @return True|False
      */
     public function refreshToken()
     {
@@ -1038,14 +1072,11 @@ final class DataApi implements DataApiInterface
             case 401:
                 // found set of 0, may or may not be expected
                 return [];
-                break;
             case 952:
                 // 952 = dapi token has expired
                 return True;
-                break;
             default:
                 return False;
-                break;
         }
     }
 }
