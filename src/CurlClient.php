@@ -2,6 +2,7 @@
 
 namespace RCConsulting\FileMakerApi;
 
+use CURLFile;
 use RCConsulting\FileMakerApi\Exception\Exception;
 
 /**
@@ -9,11 +10,11 @@ use RCConsulting\FileMakerApi\Exception\Exception;
  *
  * @package RCConsulting\DataApi
  */
-final class CurlClient
+final class CurlClient implements HttpClientInterface
 {
-    private $sslVerify = False;
-    private $baseUrl = null;
-    private $forceLegacyHTTP = False;
+    private bool $sslVerify;
+    private ?string $baseUrl;
+    private bool $forceLegacyHTTP;
 
     /**
      * CurlClient constructor
@@ -39,7 +40,7 @@ final class CurlClient
      * @return Response
      * @throws Exception
      */
-    public function request(string $method, string $url, array $options)
+    public function request(string $method, string $url, array $options): Response
     {
         $ch = curl_init();
         if ($ch === False) {
@@ -76,7 +77,7 @@ final class CurlClient
         }
 
         if (isset($options['file']) && !empty($options['file']) && $method === 'POST') {
-            $cURLFile = new \CURLFile($options['file']['path'], mime_content_type($options['file']['path']), $options['file']['name']);
+            $cURLFile = new CURLFile($options['file']['path'], mime_content_type($options['file']['path']), $options['file']['name']);
 
             curl_setopt($ch, CURLOPT_POSTFIELDS, ['upload' => $cURLFile]);
 
@@ -129,7 +130,7 @@ final class CurlClient
      *
      * @throws Exception
      */
-    private function validateResponse(Response $response)
+    private function validateResponse(Response $response): void
     {
         if ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600 || $response->getHttpCode() === 100) {
             if (isset($response->getBody()['messages'][0]['message'])) {
