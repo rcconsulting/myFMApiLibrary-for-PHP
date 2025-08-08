@@ -1,4 +1,4 @@
-FileMaker 17/18/19 Data API wrapper - myFMApiLibrary for PHP
+FileMaker 17/18/19/21/22 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
 ## Team
@@ -18,7 +18,7 @@ General FileMaker document on the FMS 17 Data API is available [here](https://fm
 
 General FileMaker document on the FMS 18 Data API is available [here](https://fmhelp.filemaker.com/docs/18/en/dataapi/)
 
-General FileMaker document on the FMS 19 Data API is available [here](https://help.claris.com/en/data-api-guide/)
+General FileMaker document on the FMS 19+ Data API is available [here](https://help.claris.com/en/data-api-guide/)
 
 ## Rationale
 This fork is to bring greater out of the box compatibility to the myFMApiLibrary, vs the Lesterius upstream code. We're immensely grateful for the hard work Lesterius put in.
@@ -37,12 +37,19 @@ This fork is to bring greater out of the box compatibility to the myFMApiLibrary
 - PHP cURL extension
 - PHP mbstring extension
 
+### Library version >=3.0.0:
+
+- PHP >= 8.3
+- PHP cURL extension
+- PHP mbstring extension
+- Guzzle
+
 ## Installation
 
 The recommended way to install it is through [Composer](http://getcomposer.org).
 
 ```bash
-composer require rcconsulting/myfmapilibrary-for-php:\>=2.0.0
+composer require rcconsulting/myfmapilibrary-for-php:\>=3.0.0
 ```
 
 After installing, you need to notate that you'll use this library, and require Composer's autoloader:
@@ -92,6 +99,116 @@ $dataApi->loginOauth('oAuthRequestId', 'oAuthIdentifier');
 
 $dataApi->logout();
 ```
+
+### HTTP Client Options
+
+The library supports multiple HTTP client implementations through an abstraction layer. You can choose between cURL-based and Guzzle-based HTTP clients using either type-safe enumerations or backward-compatible strings.
+
+#### Available HTTP Clients
+
+**CurlClient (Default)**
+- Uses PHP's native cURL extension
+- Lightweight and fast
+- Default choice for backward compatibility
+
+**GuzzleClient**
+- Uses the Guzzle HTTP client library
+- Better HTTP/2 support
+- Advanced features like middleware support
+- Better error handling and debugging capabilities
+
+#### Usage Examples
+
+**Using HttpClientType Enumeration (Recommended):**
+```php
+use RCConsulting\FileMakerApi\DataApi;
+
+// Using DataApi\HttpClientType::CURL (default)
+$dataApi = new DataApi(
+    'https://test.fmconnection.com/fmi/data',
+    'MyDatabase',
+    'username',
+    'password',
+    true,                       // SSL verification
+    false,                      // Force legacy HTTP
+    false,                      // Return response object
+    HttpClient::CURL,           // HTTP client type (enum)
+    DapiVersion::V1             // Data API version (enum)
+);
+
+// Using DataApi\HttpClientType::GUZZLE
+$dataApi = new DataApi(
+    'https://test.fmconnection.com/fmi/data',
+    'MyDatabase',
+    'username',
+    'password',
+    true,                       // SSL verification
+    false,                      // Force legacy HTTP
+    false,                      // Return response object
+    HttpClient::GUZZLE,         // HTTP client type (enum)
+    DapiVersion::VLATEST        // Data API version (enum)
+);
+
+// Default behavior (uses HttpClientType::CURL)
+$dataApi = new DataApi(
+    'https://test.fmconnection.com/fmi/data',
+    'MyDatabase',
+    'username',
+    'password'
+);
+```
+
+**Using String Values (Backward Compatibility):**
+```php
+// Using string 'curl'
+$dataApi = new DataApi(
+    'https://test.fmconnection.com/fmi/data',
+    'MyDatabase',
+    'username',
+    'password',
+    true,               // SSL verification
+    false,              // Force legacy HTTP
+    false,              // Return response object
+    'curl',             // HTTP client type (string)
+    DapiVersion::V1     // Data API version (enum)
+);
+
+// Using string 'guzzle'
+$dataApi = new DataApi(
+    'https://test.fmconnection.com/fmi/data',
+    'MyDatabase',
+    'username',
+    'password',
+    true,               // SSL verification
+    false,              // Force legacy HTTP
+    false,              // Return response object
+    'guzzle',           // HTTP client type (string)
+    DapiVersion::V1     // Data API version (enum)
+);
+```
+
+**Constructor Parameters:**
+```php
+new DataApi(
+    string $apiUrl,                                     // FileMaker Data API URL
+    string $apiDatabase,                                // Database name
+    string $apiUser = null,                             // Username (optional)
+    string $apiPassword = null,                         // Password (optional)
+    bool $sslVerify = true,                             // Verify SSL certificates
+    bool $forceLegacyHTTP = false,                      // Force HTTP/1.1
+    bool $returnResponseObject = false,                 // Return full response objects
+    HttpClient|string $httpClient = HttpClient::CURL    // HTTP client (enum or string)
+    DapiVersion $dapiVersion = DapiVersion::V1          //specify Data API version (enum) currently v1, v2 or vLatest
+);
+```
+
+#### Benefits of HTTP Client Abstraction
+
+- **Flexibility**: Switch between HTTP implementations without changing your code
+- **Future-proofing**: Easy migration to new HTTP client libraries
+- **Testing**: Better mocking capabilities with Guzzle
+- **Performance**: Choose the best client for your specific needs
+- **Backward Compatibility**: Existing code continues to work unchanged
 
 ### Create record
 
@@ -171,7 +288,7 @@ $portals = [
 ];
 
 try {
-  $record = $dataApi->getRecord('layout name', $recordId, $portals, $scripts);
+  $record = $dataApi->getRecord('layout name', $recordId, $portals, $scripts, $responseLayout, $dateFormat);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -194,7 +311,7 @@ $sort = [
 ];
 
 try {
-  $record = $dataApi->getRecords('layout name', $sort, $offset, $limit, $portals, $scripts);
+  $record = $dataApi->getRecords('layout name', $sort, $offset, $limit, $portals, $scripts, $responseLayout, $dateFormat);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -217,7 +334,7 @@ $query = [
 ];
 
 try {
-  $results = $dataApi->findRecords('layout name', $query, $sort, $offset, $limit, $portals, $scripts, $responseLayout);
+  $results = $dataApi->findRecords('layout name', $query, $sort, $offset, $limit, $portals, $scripts, $responseLayout, $dateFormat);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -316,6 +433,12 @@ if ($dataApi->validateTokenWithServer()){
 
 ```
 
+#### update object settings
+```php
+//use this if you need to explicitly use v1 or v2. The default is v1, any future versions will be added. vLatest is also supported.
+$dataApi->setDAPIVersion($dapiVersion)
+```
+
 ## ToDo:
 
-- replace all curl with [guzzle](https://github.com/guzzle/guzzle "GuzzleHTTP"), while adding [certainty](https://github.com/paragonie/certainty "Certainty") and [monolog](https://github.com/Seldaek/monolog "monolog")
+- ~~replace all curl with [guzzle](https://github.com/guzzle/guzzle "GuzzleHTTP")~~, while adding [certainty](https://github.com/paragonie/certainty "Certainty") and [monolog](https://github.com/Seldaek/monolog "monolog")
