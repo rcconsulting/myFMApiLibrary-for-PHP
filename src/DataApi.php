@@ -3,14 +3,16 @@
 namespace RCConsulting\FileMakerApi;
 
 use RCConsulting\FileMakerApi\Exception\Exception;
+use RCConsulting\FileMakerApi\HttpClientType;
+use RCConsulting\FileMakerApi\DapiVersion;
 use ValueError;
 
 /**
  * Class DataApi
  * @package RCConsulting\DataApi
  */
-final class DataApi implements DataApiInterface
-{
+final class DataApi implements DataApiInterface {
+
     const int FILEMAKER_NO_RECORDS = 401;
     const int FILEMAKER_API_TOKEN_EXPIRED = 952;
 
@@ -30,8 +32,11 @@ final class DataApi implements DataApiInterface
     protected ?string $dapiUserPass = null;
     protected ?string $oAuthRequestId = null;
     protected ?string $oAuthIdentifier = null;
+    protected DapiVersion $DAPIVersion = DapiVersion::V1;
+    protected string $DAPIVersionString = 'v1';
     protected bool $hasToken = False;
     protected bool $returnResponseObject = False;
+
 
     /**
      * DataApi constructor
@@ -44,14 +49,15 @@ final class DataApi implements DataApiInterface
      * @param bool $forceLegacyHTTP
      * @param bool $returnResponseObject
      * @param HttpClientType|string $httpClient HTTP client implementation to use (HttpClientType enum or string 'curl'/'guzzle')
-     *
+     * @param DapiVersion|string $dapiVersion
      * @throws Exception
      */
-    public function __construct(string $apiUrl, string $apiDatabase, ?string $apiUser = null, ?string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False, bool $returnResponseObject = False, HttpClientType|string $httpClient = HttpClientType::CURL)
+    public function __construct(string $apiUrl, string $apiDatabase, ?string $apiUser = null, ?string $apiPassword = null, bool $sslVerify = True, bool $forceLegacyHTTP = False, bool $returnResponseObject = False, HttpClientType|string $httpClient = HttpClientType::CURL, DapiVersion|string $dapiVersion = DapiVersion::V1 )
     {
         $this->apiDatabase = $this->prepareURLpart($apiDatabase);
         $this->ClientRequest = $this->createHttpClient($httpClient, $apiUrl, $sslVerify, $forceLegacyHTTP);
         $this->returnResponseObject = $returnResponseObject;
+        $this->DAPIVersion = is_string($dapiVersion) ? DapiVersion::fromString($dapiVersion) : $dapiVersion;
 
         if (!is_null($apiUser)) {
             $this->login($apiUser, $apiPassword);
@@ -71,13 +77,8 @@ final class DataApi implements DataApiInterface
      */
     private function createHttpClient(HttpClientType|string $httpClient, string $apiUrl, bool $sslVerify, bool $forceLegacyHTTP): HttpClientInterface
     {
-        // Convert string to enum if necessary
         if (is_string($httpClient)) {
-            try {
-                $httpClient = HttpClientType::fromString($httpClient);
-            } catch (ValueError $e) {
-                throw new Exception($e->getMessage());
-            }
+            $httpClient = HttpClientType::fromString($httpClient);
         }
 
         return match ($httpClient) {
@@ -99,7 +100,7 @@ final class DataApi implements DataApiInterface
     {
         $response = $this->ClientRequest->request(
             'POST',
-            "/v1/databases/$this->apiDatabase/sessions",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/sessions",
             [
                 'headers' => [
                     'Authorization' => 'Basic ' . base64_encode("$apiUsername:$apiPassword"),
@@ -124,7 +125,7 @@ final class DataApi implements DataApiInterface
     {
         $response = $this->ClientRequest->request(
             'POST',
-            "/v1/databases/$this->apiDatabase/sessions",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/sessions",
             [
                 'headers' => [
                     'X-FM-Data-Login-Type' => 'oauth',
@@ -144,11 +145,11 @@ final class DataApi implements DataApiInterface
      *  Close the connection with FileMaker Server API
      * @throws Exception
      */
-    public function logout()
+    public function logout(): DataApi
     {
         $this->ClientRequest->request(
             'DELETE',
-            "/v1/databases/$this->apiDatabase/sessions/$this->apiToken",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/sessions/$this->apiToken",
             []
         );
         $this->apiToken = null;
@@ -183,7 +184,7 @@ final class DataApi implements DataApiInterface
 
         $response = $this->ClientRequest->request(
             'POST',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => array_merge(
@@ -224,7 +225,7 @@ final class DataApi implements DataApiInterface
 
         $response = $this->ClientRequest->request(
             'PATCH',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => array_merge(
@@ -257,7 +258,7 @@ final class DataApi implements DataApiInterface
         // Send curl request
         $response = $this->ClientRequest->request(
             'POST',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => array_merge(
@@ -287,7 +288,7 @@ final class DataApi implements DataApiInterface
         $recordId = $this->prepareURLpart($recordId);
         $this->ClientRequest->request(
             'DELETE',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => $this->prepareScriptOptions($scripts),
@@ -307,7 +308,7 @@ final class DataApi implements DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, ?int $dateFormat = null): mixed
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, ?int $dateFormat = self::DATE_DEFAULT): mixed
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -327,13 +328,13 @@ final class DataApi implements DataApiInterface
             $queryParams['layout.response'] = $responseLayout;
         }
 
-        if (!is_null($dateFormat)){
+        if (!is_null($dateFormat)) {
             $queryParams = array_merge(
                 $queryParams,
                 $this->prepareScriptOptions($scripts),
                 $this->prepareDateFormat($dateFormat)
             );
-                } else {
+        } else {
             $queryParams = array_merge(
                 $queryParams,
                 $this->prepareScriptOptions($scripts)
@@ -342,7 +343,7 @@ final class DataApi implements DataApiInterface
 
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records/$recordId",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'query_params' => $queryParams,
@@ -359,17 +360,17 @@ final class DataApi implements DataApiInterface
      *  Get list of records
      *
      * @param string $layout
-     * @param null $sort
-     * @param null $offset
-     * @param null $limit
+     * @param ?string $sort
+     * @param ?int $offset
+     * @param ?int $limit
      * @param array $portals
      * @param array $scripts
-     * @param string|null $responseLayout
+     * @param ?string $responseLayout
      * @param int $dateFormat
-     * @return array|\Response
+     * @return array|Response
      * @throws Exception
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT): array|\Response
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, ?int $dateFormat = self::DATE_DEFAULT): array|Response
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -390,7 +391,7 @@ final class DataApi implements DataApiInterface
             $jsonOptions['layout.response'] = $responseLayout;
         }
 
-        if (!is_null($dateFormat)){
+        if (!is_null($dateFormat)) {
             $jsonOptions = array_merge(
                 $jsonOptions,
                 $this->prepareScriptOptions($scripts),
@@ -407,7 +408,7 @@ final class DataApi implements DataApiInterface
 
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'query_params' => $jsonOptions,
@@ -443,7 +444,7 @@ final class DataApi implements DataApiInterface
         $containerFieldName = $this->prepareURLpart($containerFieldName);
         $this->ClientRequest->request(
             'POST',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/records/$recordId/containers/$containerFieldName/$containerFieldRepetition",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/records/$recordId/containers/$containerFieldName/$containerFieldRepetition",
             [
                 'headers' => array_merge(
                     $this->getDefaultHeaders(),
@@ -470,10 +471,10 @@ final class DataApi implements DataApiInterface
      * @param array $scripts
      * @param string|null $responseLayout
      * @param int $dateFormat
-     * @return mixed
+     * @return array|bool|Response
      * @throws Exception
      */
-    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT): mixed
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT): array|bool|Response
     {
         $layout = $this->prepareURLpart($layout);
 
@@ -526,7 +527,7 @@ final class DataApi implements DataApiInterface
             }
         }
 
-        if (!is_null($dateFormat)){
+        if (!is_null($dateFormat)) {
             $jsonOptions = array_merge(
                 $jsonOptions,
                 $this->prepareScriptOptions($scripts),
@@ -544,7 +545,7 @@ final class DataApi implements DataApiInterface
         try {
             $response = $this->ClientRequest->request(
                 'POST',
-                "/v1/databases/$this->apiDatabase/layouts/$layout/_find",
+                "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/_find",
                 [
                     'headers' => $this->getDefaultHeaders(),
                     'json' => $jsonOptions,
@@ -571,36 +572,36 @@ final class DataApi implements DataApiInterface
      * @param string $scriptName
      * @param string|null $scriptParam
      *
-     * @return string|true|\Response
+     * @return string|true|Response
      * @throws Exception
      */
-    public function executeScript(string $layout, string $scriptName, ?string $scriptParam = null): string|true|\Response
+    public function executeScript(string $layout, string $scriptName, ?string $scriptParam = null): string|true|Response
     {
         $layout = $this->prepareURLpart($layout);
         $scriptName = $this->prepareURLpart($scriptName);
 
-        if (!empty($scriptParam)){
+        if (!empty($scriptParam)) {
             // Prepare options
             $queryParams = [];
             // optional parameters
             $queryParams['script.param'] = $scriptParam;
             // set up parameters before sending to data api
             $options = [
-                'headers'       => $this->getDefaultHeaders(),
-                'query_params'  => array_merge(
+                'headers' => $this->getDefaultHeaders(),
+                'query_params' => array_merge(
                     $queryParams
                 ),
             ];
         } else {
             $options = [
-                'headers'           => $this->getDefaultHeaders()
+                'headers' => $this->getDefaultHeaders()
             ];
         }
 
         // Send curl request
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/databases/$this->apiDatabase/layouts/$layout/script/$scriptName",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout/script/$scriptName",
             $options
         );
         if ($this->returnResponseObject) {
@@ -624,15 +625,15 @@ final class DataApi implements DataApiInterface
      * @param string $layout
      * @param array $globalFields
      *
-     * @return array|\Response
+     * @return array|Response
      * @throws Exception
      */
-    public function setGlobalFields(string $layout, array $globalFields): array|\Response
+    public function setGlobalFields(string $layout, array $globalFields): array|Response
     {
         $layout = $this->prepareURLpart($layout);
         $response = $this->ClientRequest->request(
             'PATCH',
-            "/v1/databases/$this->apiDatabase/globals",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/globals",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => [
@@ -653,8 +654,10 @@ final class DataApi implements DataApiInterface
      *  Set API token in request headers
      *
      * @return string[]|False
+     * @throws Exception
+     * @throws Exception
      */
-    private function getDefaultHeaders()
+    private function getDefaultHeaders(): array|false
     {
         if ($this->hasToken) {
             if ($this->isApiTokenExpired()) {
@@ -681,7 +684,7 @@ final class DataApi implements DataApiInterface
      *
      * @return string
      */
-    protected function prepareURLpart($data)
+    protected function prepareURLpart(string|int $data): string
     {
         return rawurlencode(trim($data));
     }
@@ -693,7 +696,7 @@ final class DataApi implements DataApiInterface
      *
      * @return array
      */
-    private function prepareScriptOptions(array $scripts)
+    private function prepareScriptOptions(array $scripts): array
     {
         $preparedScript = [];
         foreach ($scripts as $script) {
@@ -732,7 +735,7 @@ final class DataApi implements DataApiInterface
      *
      * @return array
      */
-    private function preparePortalsOptions(array $portals)
+    private function preparePortalsOptions(array $portals): array
     {
         if (empty($portals)) {
             return [];
@@ -762,19 +765,14 @@ final class DataApi implements DataApiInterface
      *
      * @return array
      */
-    private function prepareDateFormat(int $dateFormat)
+    private function prepareDateFormat(int $dateFormat): array
     {
         $payload = [];
-        switch ($dateFormat) {
-            case self::DATE_FILELOCALE:
-                $payload['dateformats'] = 1;
-                break;
-            case self::DATE_ISO8601:
-                $payload['dateformats'] = 2;
-                break;
-            default:
-                $payload['dateformats'] = 0;
-        }
+        $payload['dateformats'] = match ($dateFormat) {
+            self::DATE_FILELOCALE => 1,
+            self::DATE_ISO8601 => 2,
+            default => 0,
+        };
         return $payload;
     }
 
@@ -788,7 +786,7 @@ final class DataApi implements DataApiInterface
      *
      * @return True|False
      */
-    protected function storeCredentials(string $user, string $pass)
+    protected function storeCredentials(string $user, string $pass): bool
     {
         if ($this->dapiUserName = $user) {
             if ($this->dapiUserPass = $pass) {
@@ -804,12 +802,11 @@ final class DataApi implements DataApiInterface
     /**
      * stores $oAuthRequestId and $oAuthIdentifier for oAuth dapi logins, for token regeneration upon expiry
      *
-     * @param string $user
-     * @param string $pass
-     *
+     * @param string $oAuthRequestId
+     * @param string $oAuthIdentifier
      * @return True|False
      */
-    protected function storeOAuth(string $oAuthRequestId, string $oAuthIdentifier)
+    protected function storeOAuth(string $oAuthRequestId, string $oAuthIdentifier): bool
     {
         if ($this->oAuthRequestId = $oAuthRequestId) {
             if ($this->oAuthIdentifier = $oAuthIdentifier) {
@@ -829,7 +826,7 @@ final class DataApi implements DataApiInterface
      *
      * @return null|string
      */
-    public function getApiToken()
+    public function getApiToken(): ?string
     {
         return $this->apiToken;
     }
@@ -842,7 +839,7 @@ final class DataApi implements DataApiInterface
      *
      * @return True|False
      */
-    public function setApiToken(string $token, $date = null)
+    public function setApiToken(string $token, $date = null): bool
     {
         if ($this->apiToken = $token) {
             if (!is_null($date)) {
@@ -860,9 +857,9 @@ final class DataApi implements DataApiInterface
     /**
      * returns API token last use date, or False if there is no last use date.
      *
-     * @return string|False
+     * @return false|string|null
      */
-    public function getApiTokenDate()
+    public function getApiTokenDate(): false|string|null
     {
         if (!is_null($this->apiTokenDate)) {
             return $this->apiTokenDate;
@@ -876,7 +873,7 @@ final class DataApi implements DataApiInterface
      *
      * @return True|False
      */
-    public function setApiTokenDate()
+    public function setApiTokenDate(): bool
     {
         // calculate and then set token date
         // this function assumes it will be called in the context of using the token
@@ -892,7 +889,7 @@ final class DataApi implements DataApiInterface
      *
      * @return True|False
      */
-    public function isApiTokenExpired()
+    public function isApiTokenExpired(): bool
     {
         // checks if token is OK to use
         if ($this->getApiTokenDate()) {
@@ -911,8 +908,10 @@ final class DataApi implements DataApiInterface
      * will refresh the token IF token was retreived via username/password login call sometime in the past
      *
      * @return True|False
+     * @throws Exception
+     * @throws Exception
      */
-    public function refreshToken()
+    public function refreshToken(): bool
     {
         // warning: cannot be called before login()
         if (!is_null($this->dapiUserName)) {
@@ -936,17 +935,17 @@ final class DataApi implements DataApiInterface
      * @return bool
      * @throws Exception
      */
-    public function validateTokenWithServer()
+    public function validateTokenWithServer(): bool
     {
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/validateSession",
+            "/$this->DAPIVersionString/validateSession",
             [
                 'headers' => $this->getDefaultHeaders()
             ]
         );
 
-        if ($response->getBody()['messages'][0]['code'] === 0) {
+        if ((int)$response->getBody()['messages'][0]['code'] === 0) {
             return True;
         } else {
             return False;
@@ -956,15 +955,15 @@ final class DataApi implements DataApiInterface
     // METADATA OPERATIONS
 
     /**
-     * @return mixed
+     * @return array
      * @throws Exception
      */
-    public function getProductInfo()
+    public function getProductInfo(): array
     {
         // Send curl request
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/productInfo",
+            "/$this->DAPIVersionString/productInfo",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => []
@@ -974,33 +973,15 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * @return mixed
+     * @return array
      * @throws Exception
      */
-    public function getDatabaseNames()
+    public function getDatabaseNames(): array
     {
         // Send curl request
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/databases",
-            [
-                'headers' => $this->getHeaderAuth(),
-                'json' => []
-            ]
-        );
-        return $response->getRawResponse();
-    }
-
-    /**
-     * @return mixed
-     * @throws Exception
-     */
-    public function getLayoutNames()
-    {
-        // Send curl request
-        $response = $this->ClientRequest->request(
-            'GET',
-            "/v1/databases/$this->apiDatabase/layouts",
+            "/$this->DAPIVersionString/databases",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => []
@@ -1010,15 +991,33 @@ final class DataApi implements DataApiInterface
     }
 
     /**
-     * @return mixed
+     * @return array
      * @throws Exception
      */
-    public function getScriptNames()
+    public function getLayoutNames(): array
     {
         // Send curl request
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/databases/$this->apiDatabase/scripts",
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts",
+            [
+                'headers' => $this->getDefaultHeaders(),
+                'json' => []
+            ]
+        );
+        return $response->getRawResponse();
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    public function getScriptNames(): array
+    {
+        // Send curl request
+        $response = $this->ClientRequest->request(
+            'GET',
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/scripts",
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => []
@@ -1031,10 +1030,10 @@ final class DataApi implements DataApiInterface
      * @param string $layout
      * @param        $recordId
      *
-     * @return mixed
+     * @return array
      * @throws Exception
      */
-    public function getLayoutMetadata(string $layout, $recordId = null)
+    public function getLayoutMetadata(string $layout, $recordId = null): array
     {
         // Prepare options
         $recordId = $this->prepareURLpart($recordId);
@@ -1047,7 +1046,7 @@ final class DataApi implements DataApiInterface
         // Send curl request
         $response = $this->ClientRequest->request(
             'GET',
-            "/v1/databases/$this->apiDatabase/layouts/$layout" . $metadataFormat,
+            "/$this->DAPIVersionString/databases/$this->apiDatabase/layouts/$layout" . $metadataFormat,
             [
                 'headers' => $this->getDefaultHeaders(),
                 'json' => array_merge(
@@ -1059,24 +1058,32 @@ final class DataApi implements DataApiInterface
     }
 
     /**
+     * set DAPIVersion separate from constructor
+     *
+     * @param DapiVersion $version
+     * @return void
+     */
+    public function setDAPIVersion(DapiVersion $version): void
+    {
+        $this->DAPIVersion = $version;
+    }
+
+    /**
      * handles a couple common errors
      *
-     * @return mixed
+     * @param $e
+     * @return array|bool
      */
-    private function dAPIerrorHandler($e)
+    private function dAPIerrorHandler($e): array|bool
     {
         // this logic was previously in a single function in the library, but this is a useful feature.
         // will return True (or be truthy) if the error was or can be handled silently.
         $code = $e->getCode();
-        switch ($code) {
-            case 401:
-                // found set of 0, may or may not be expected
-                return [];
-            case 952:
-                // 952 = dapi token has expired
-                return True;
-            default:
-                return False;
-        }
+        return match ($code) {
+            401 => [],
+            952 => True,
+            default => False,
+        };
     }
 }
+class_alias(HttpClientType::class, 'RCConsulting\\FileMakerApi\\HttpClientType');
