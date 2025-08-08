@@ -31,7 +31,7 @@ interface HttpClientInterface
      * @param string $url The endpoint URL (relative to base URL)
      * @param array  $options Request options including:
      *                       - headers: array of HTTP headers
-     *                       - json: array of data to be JSON encoded
+     *                       - JSON: array of data to be JSON encoded
      *                       - file: array with file upload information (path, name)
      *                       - query_params: array of query parameters
      *

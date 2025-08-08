@@ -31,8 +31,11 @@ final class GuzzleClient implements HttpClientInterface
      */
     public function __construct(string $apiUrl, bool $sslVerify, bool $forceLegacyHTTP)
     {
+        // Ensure base URL ends with slash for proper Guzzle URL resolution
+        $baseUri = rtrim($apiUrl, '/') . '/';
+
         $this->sslVerify = $sslVerify;
-        $this->baseUrl = $apiUrl;
+        $this->baseUrl = $baseUri;
         $this->forceLegacyHTTP = $forceLegacyHTTP;
 
         // Configure Guzzle client options
@@ -57,7 +60,7 @@ final class GuzzleClient implements HttpClientInterface
      * @param string $url The endpoint URL (relative to base URL)
      * @param array  $options Request options including:
      *                       - headers: array of HTTP headers
-     *                       - json: array of data to be JSON encoded
+     *                       - JSON: array of data to be JSON encoded
      *                       - file: array with file upload information (path, name)
      *                       - query_params: array of query parameters
      *
@@ -69,18 +72,32 @@ final class GuzzleClient implements HttpClientInterface
         try {
             $guzzleOptions = [];
 
-            // Set headers
-            if (isset($options['headers'])) {
-                $guzzleOptions[RequestOptions::HEADERS] = $options['headers'];
-            }
+            // Remove leading slash from URL since we're using base_uri
+            $url = ltrim($url, '/');
 
-            // Handle JSON payload
-            if (isset($options['json']) && !empty($options['json']) && $method !== 'GET') {
+            // Handle JSON payload - only set JSON option if there's actual data
+            if (!empty($options['json']) && $method !== 'GET') {
                 $guzzleOptions[RequestOptions::JSON] = $options['json'];
+            } elseif (isset($options['json']) && $method !== 'GET') {
+                // For empty JSON arrays, send empty JSON object with proper headers
+                $guzzleOptions[RequestOptions::BODY] = '{}';
+                $guzzleOptions[RequestOptions::HEADERS] = array_merge(
+                    $options['headers'] ?? [],
+                    ['Content-Type' => 'application/json']
+                );
+            } else {
+                // Set headers for non-JSON requests
+                if (isset($options['headers'])) {
+                    $guzzleOptions[RequestOptions::HEADERS] = $options['headers'];
+                }
             }
 
             // Handle file upload
-            if (isset($options['file']) && !empty($options['file']) && $method === 'POST') {
+            if (!empty($options['file']) && $method === 'POST') {
+                // Remove JSON options for file uploads
+                unset($guzzleOptions[RequestOptions::JSON]);
+                unset($guzzleOptions[RequestOptions::BODY]);
+
                 $guzzleOptions[RequestOptions::MULTIPART] = [
                     [
                         'name' => 'upload',
@@ -88,10 +105,15 @@ final class GuzzleClient implements HttpClientInterface
                         'filename' => $options['file']['name'],
                     ]
                 ];
+
+                // Set headers for file upload
+                if (isset($options['headers'])) {
+                    $guzzleOptions[RequestOptions::HEADERS] = $options['headers'];
+                }
             }
 
             // Handle query parameters
-            if (isset($options['query_params']) && !empty($options['query_params'])) {
+            if (!empty($options['query_params'])) {
                 $guzzleOptions[RequestOptions::QUERY] = $options['query_params'];
             }
 
@@ -99,12 +121,11 @@ final class GuzzleClient implements HttpClientInterface
             $guzzleResponse = $this->client->request($method, $url, $guzzleOptions);
 
             // Convert Guzzle response to our Response format
-            $headers = [];
-            foreach ($guzzleResponse->getHeaders() as $name => $values) {
-                $headers[$name] = implode(', ', $values);
-            }
+            $headers = array_map(function ($values) {
+                return implode(', ', $values);
+            }, $guzzleResponse->getHeaders());
 
-            // Add status line for compatibility with existing Response parsing
+            // Add a status line for compatibility with existing Response parsing
             $headers['Status'] = sprintf(
                 'HTTP/%s %d %s',
                 $guzzleResponse->getProtocolVersion(),
@@ -124,8 +145,10 @@ final class GuzzleClient implements HttpClientInterface
         }
     }
 
+
+
     /**
-     * Format headers array into string format expected by Response::parse()
+     * Format headers array into the string format expected by Response::parse()
      *
      * @param array $headers
      * @return string
@@ -152,14 +175,12 @@ final class GuzzleClient implements HttpClientInterface
                 $eMessage = is_array($response->getBody()['messages'][0]['message']) 
                     ? implode(' - ', $response->getBody()['messages'][0]['message']) 
                     : $response->getBody()['messages'][0]['message'];
-                $eCode = isset($response->getBody()['messages'][0]['code']) 
-                    ? $response->getBody()['messages'][0]['code'] 
-                    : $response->getHttpCode();
+                $eCode = $response->getBody()['messages'][0]['code'] ?? $response->getHttpCode();
 
                 throw new Exception($eMessage, $eCode);
             }
 
-            // A status code 100 with no message is OK
+            // Status code 100 with no message is OK
             if ($response->getHttpCode() !== 100) {
                 $message = is_array($response->getBody()) || is_object($response->getBody()) 
                     ? json_encode($response->getBody()) 
