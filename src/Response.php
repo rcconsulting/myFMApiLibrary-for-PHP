@@ -13,23 +13,23 @@ final class Response
     /**
      * @var array
      */
-    private array $headers = [];
+    private array $headers;
     /**
      * @var array
      */
-    private array $body = [];
+    private array $body;
     /**
      * @var array
      */
-    private array $response = [];
+    private array $response;
     /**
      * @var array
      */
-    private array $records = [];
+    private array $records;
     /**
-     * @var int
+     * @var ?int
      */
-    private ?int $responseCodeHTTP = null;
+    private ?int $responseCodeHTTP;
 
     /**
      * Response constructor.
@@ -44,13 +44,18 @@ final class Response
         $this->headers = $headers;
         $this->body = $body;
         $this->response = $this->body['response'];
+
         //checks to see if data even exists in this response type, logins do not, for example
         if (isset($this->response['data']) || array_key_exists('data', $this->response)) {
             $this->records = $this->response['data'];
+        } else {
+            $this->records = []; // Initialize as empty array when no data exists
         }
+
         // parses "HTTP/1.1 200 OK" and returns the 200
         $this->responseCodeHTTP = (int)explode(" ", $this->getHeader("Status"))[1];
     }
+
 
     /**
      * @param string $headers
@@ -153,7 +158,7 @@ final class Response
             }, $exploded);
         }, $headers);
 
-        // We remove empty lines in array
+        // We remove empty lines in the array
         $headers = array_filter($headers, function ($value) {
             return (is_array($value) ? $value[0] : $value) !== '';
         });
