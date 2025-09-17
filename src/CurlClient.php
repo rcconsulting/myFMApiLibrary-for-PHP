@@ -50,10 +50,14 @@ final class CurlClient implements HttpClientInterface
         $headers = [];
         $completeUrl = $this->baseUrl . $url;
 
-        if (!$this->sslVerify) {
+        if ($this->sslVerify) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        } else {
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         }
+
         if ($this->forceLegacyHTTP) {
             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
         }
@@ -61,7 +65,7 @@ final class CurlClient implements HttpClientInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, True);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, True);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_POST, ($method === 'POST' ? True : False));
+        curl_setopt($ch, CURLOPT_POST, $method === 'POST');
 
         $contentLength = 0;
         if (isset($options['json']) && !empty($options['json']) && $method !== 'GET') {
@@ -132,10 +136,10 @@ final class CurlClient implements HttpClientInterface
      */
     private function validateResponse(Response $response): void
     {
-        if ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600 || $response->getHttpCode() === 100) {
+        if ($response->getHttpCode() === 100 || ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600)) {
             if (isset($response->getBody()['messages'][0]['message'])) {
                 $eMessage = is_array($response->getBody()['messages'][0]['message']) ? implode(' - ', $response->getBody()['messages'][0]['message']) : $response->getBody()['messages'][0]['message'];
-                $eCode = isset($response->getBody()['messages'][0]['code']) ? $response->getBody()['messages'][0]['code'] : $response->getHttpCode();
+                $eCode = $response->getBody()['messages'][0]['code'] ?? $response->getHttpCode();
 
                 throw new Exception($eMessage, $eCode);
             }

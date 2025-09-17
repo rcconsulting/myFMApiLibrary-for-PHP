@@ -101,7 +101,7 @@ final class GuzzleClient implements HttpClientInterface
                 $guzzleOptions[RequestOptions::MULTIPART] = [
                     [
                         'name' => 'upload',
-                        'contents' => fopen($options['file']['path'], 'r'),
+                        'contents' => fopen($options['file']['path'], 'rb'),
                         'filename' => $options['file']['name'],
                     ]
                 ];
@@ -170,7 +170,7 @@ final class GuzzleClient implements HttpClientInterface
      */
     private function validateResponse(Response $response): void
     {
-        if ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600 || $response->getHttpCode() === 100) {
+        if ($response->getHttpCode() === 100 || ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600)) {
             if (isset($response->getBody()['messages'][0]['message'])) {
                 $eMessage = is_array($response->getBody()['messages'][0]['message']) 
                     ? implode(' - ', $response->getBody()['messages'][0]['message']) 

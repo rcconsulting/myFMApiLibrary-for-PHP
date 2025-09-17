@@ -376,11 +376,11 @@ final class DataApi implements DataApiInterface {
         $jsonOptions = [];
 
         if (!is_null($offset)) {
-            $jsonOptions['_offset'] = intval($offset);
+            $jsonOptions['_offset'] = (int)$offset;
         }
 
         if (!is_null($limit)) {
-            $jsonOptions['_limit'] = intval($limit);
+            $jsonOptions['_limit'] = (int)$limit;
         }
 
         if (!is_null($sort)) {
@@ -507,11 +507,11 @@ final class DataApi implements DataApiInterface {
             'query' => $preparedQuery,
         ];
         if (!is_null($offset)) {
-            $jsonOptions['offset'] = intval($offset);
+            $jsonOptions['offset'] = (int)$offset;
         }
 
         if (!is_null($limit)) {
-            $jsonOptions['limit'] = intval($limit);
+            $jsonOptions['limit'] = (int)$limit;
         }
 
         if (!is_null($responseLayout)) {
@@ -747,11 +747,11 @@ final class DataApi implements DataApiInterface {
             $portalList[] = $portal['name'];
 
             if (isset($portal['offset'])) {
-                $options['offset.' . $portal['name']] = intval($portal['offset']);
+                $options['offset.' . $portal['name']] = (int)$portal['offset'];
             }
 
             if (isset($portal['limit'])) {
-                $options['limit.' . $portal['name']] = intval($portal['limit']);
+                $options['limit.' . $portal['name']] = (int)$portal['limit'];
             }
         }
 
