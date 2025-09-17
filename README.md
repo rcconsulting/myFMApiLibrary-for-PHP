@@ -1,4 +1,4 @@
-FileMaker 17/18/19/21/22 Data API wrapper - myFMApiLibrary for PHP
+FileMaker 17/18/19/20/21/22 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
 ## Team
@@ -14,14 +14,14 @@ This library is a PHP wrapper for the Claris FileMaker Data API. It supports ver
 
 You will be able to use every functions like it's documented in your FileMaker server Data Api documentation (accessible via https://[your server domain]/fmi/data/apidoc).
 
-General FileMaker document on the FMS 17 Data API is available [here](https://fmhelp.filemaker.com/docs/17/en/dataapi/)
+General FileMaker document on the FMS 17 Data API is available [here](https://help.claris.com/archive/docs/17/en/dataapi/)
 
-General FileMaker document on the FMS 18 Data API is available [here](https://fmhelp.filemaker.com/docs/18/en/dataapi/)
+General FileMaker document on the FMS 18 Data API is available [here](https://help.claris.com/archive/docs/18/en/dataapi/)
 
 General FileMaker document on the FMS 19+ Data API is available [here](https://help.claris.com/en/data-api-guide/)
 
 ## Rationale
-This fork is to bring greater out of the box compatibility to the myFMApiLibrary, vs the Lesterius upstream code. We're immensely grateful for the hard work Lesterius put in.
+This fork is to bring greater out of the box compatibility to the myFMApiLibrary library vs the Lesterius upstream code. We're immensely grateful for the hard work Lesterius put in. Pull Requests welcome. 
 
 ## Requirements
 
@@ -64,7 +64,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 ## Prepare your FileMaker solution
 
 1. Enable the FileMaker Data API on your FileMaker Server Admin Console.
-2. Create a user in your FileMaker database, with a custom privilege set that has at least the 'fmrest' extended privilege
+2. Create a user in your FileMaker database, with a custom privilege set that has at least the 'fmrest' extended privilege enabled
 3. Define records & layouts access for this user
 
 ## Use the library
@@ -78,10 +78,10 @@ $dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com
 $dataApi->login('filemaker api user', 'filemaker api password');
 ```
 
-One-line example of Login with Credentials:
+One-line example of Login with Credentials and all Options:
 ```php
-// Arguments: DAPI URL, Database Name, DAPI User, DAPI Password, SSL Verification Enabled?, Force Legacy HTTP 1.1?
-$dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data','MyDatabase', "DAP_User", "DAPI_Pass_1234~", True, False);
+// Arguments: DAPI URL, Database Name, DAPI User, DAPI Password, SSL Verification Enabled?, Force Legacy HTTP 1.1?, Return Response Object?, HTTP Client Type?, Data API Version?
+$dataApi = new \RCConsulting\FileMakerApi\DataApi('https://test.fmconnection.com/fmi/data','MyDatabase', "DAP_User", "DAPI_Pass_1234~", True, False, False, HttpClient::CURL, DapiVersion::V1);
 ```
 
 
@@ -215,7 +215,7 @@ new DataApi(
 ```php
 // Call login method first
 
-$data = [
+$recordData = [
     'FirstName'         => 'John',
     'LastName'          => 'Doe',
     'email'             => 'johndoe@acme.inc',
@@ -224,12 +224,17 @@ $data = [
 
 $scripts = [
     [
-        'name'  => 'ValidateUser',
+        'name'  => 'ScriptThatRunsBeforeRequest',
         'param' => 'johndoe@acme.inc',
         'type'  => RCConsulting\FileMakerApi\DataApi::SCRIPT_PREREQUEST
     ],
     [
-        'name'  => 'SendEmail',
+        'name'  => 'ScriptThatRunsAfterRequestBeforeSort',
+        'param' => 'johndoe@acme.inc',
+        'type'  => RCConsulting\FileMakerApi\DataApi::SCRIPT_PRESORT
+    ],
+    [
+        'name'  => 'ScriptThatRunsAfterRequestAfterSort',
         'param' => 'johndoe@acme.inc',
         'type'  => RCConsulting\FileMakerApi\DataApi::SCRIPT_POSTREQUEST
     ]
@@ -241,7 +246,7 @@ $portalData = [
 ];
 
 try {
-    $recordId = $dataApi->createRecord('layout name', $data, $scripts, $portalData);
+    $recordId = $dataApi->createRecord('layout name', $recordData, $scripts, $portalData);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -253,7 +258,7 @@ try {
 // Call login method first
 
 try {
-  $dataApi->deleteRecord('layout name', $recordId, $script);
+  $dataApi->deleteRecord('layout name', $recordId, $scripts);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -265,7 +270,7 @@ try {
 // Call login method first
 
 try {
-  $recordId = $dataApi->editRecord('layout name', $recordId, $data, $lastModificationId, $portalData, $scripts);
+  $recordId = $dataApi->editRecord('layout name', $recordId, $recordData, $lastModificationId, $portalData, $scripts);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -354,13 +359,13 @@ try {
 ```php
 // Call login method first
 
-$data = [
+$globalsData = [
   'FieldName1'	=> 'value',
   'FieldName2'	=> 'value'
 ];
 
 try {
-  $dataApi->setGlobalFields('layout name', $data);
+  $dataApi->setGlobalFields('layout name', $globalsData);
 } catch(\Exception $e) {
   // handle exception
 }
@@ -401,30 +406,41 @@ try {
 ## library helper methods
 
 #### token usage
+
+FileMaker Data API session tokens last 15 minutes from last use. By default, this library will manage them for you. If you use the login() methods, the library will log in again automatically to retreive a new token if the one you are using has expired. 
+
+This allows easy management, and separation by user, database, or privilege set. You can easily separate different data sets, databases, or privileged access views by launching (`new`) and managing multiple data api objects at once.
+
+If you wish to manage these session tokens directly, you can use the methods below.
+
 ```php
-// useful when not explicitly logging into data api, but already have valid token
-// note that this implicitly sets the token retrieval date to now()
+// useful when not explicitly logging into data api, but already have valid session token
+// this implicitly sets the token retrieval date to now()
 $dataApi->setApiToken($token);
-// also supported
-$dataApi->setApiToken($token, $tokenDate); // + unix timestamp
+// here, $tokenDate is a unix timestamp
+$dataApi->setApiToken($token, $tokenDate);
 
 // returns current api token (without checking if it's valid)
 $token = $dataApi->getApiToken();
 
-// to check if the token is expired:
+// check if token is expired using previously-stored last use-date
+// this is NOT a live check with FMS
 if ($dataApi->isApiTokenExpired()) {
 // token expired
 } else {
 // do stuff
 }
 
-// to refresh the token in the case you've ever previously logged into the data api with this instance of the class
-// currently only works with a data api username/password combo (ie not oauth)
+// refresh token when it has expired
+// this logs in again, which creates a new session, so should only be used after the previous token has expired
+// you must have used the login() method previously. oAuth not tested.
 if ($dataApi->refreshToken()) {
 // success
+} else {
+// failure - either the login itself failed, or you have no stored credentials
 }
 
-// Validate whether the session authorization token we're using ... is actually valid ... according to FileMaker Server
+// check if the session token we are using is valid according to FileMaker Server
 if ($dataApi->validateTokenWithServer()){
 // token is valid according to FMS!
 } else {
@@ -436,7 +452,7 @@ if ($dataApi->validateTokenWithServer()){
 #### update object settings
 ```php
 //use this if you need to explicitly use v1 or v2. The default is v1, any future versions will be added. vLatest is also supported.
-$dataApi->setDAPIVersion($dapiVersion)
+$dataApi->setDAPIVersion(DapiVersion::V2)
 ```
 
 ## ToDo:
