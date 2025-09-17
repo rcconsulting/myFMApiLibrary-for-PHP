@@ -1,6 +1,7 @@
 <?php
 
 namespace RCConsulting\FileMakerApi;
+use RCConsulting\FileMakerApi\Exception\Exception;
 
 /**
  * Interface DataApiInterface
@@ -12,9 +13,9 @@ interface DataApiInterface
      * @param string $apiUsername
      * @param string $apiPassword
      *
-     * @return mixed
+     * @return $this
      */
-    public function login(string $apiUsername, string $apiPassword);
+    public function login(string $apiUsername, string $apiPassword): DataApiInterface;
 
     /**
      * @param string $oAuthRequestId
@@ -22,14 +23,14 @@ interface DataApiInterface
      *
      * @return mixed
      */
-    public function loginOauth(string $oAuthRequestId, string $oAuthIdentifier);
+    public function loginOauth(string $oAuthRequestId, string $oAuthIdentifier): DataApiInterface;
 
     /**
      *  Close the connection with FileMaker Server API
      * @return mixed
      * @throws Exception
      */
-    public function logout();
+    public function logout(): DataApiInterface;
 
     /**
      * @param string $layout
@@ -39,7 +40,7 @@ interface DataApiInterface
      *
      * @return mixed
      */
-    public function createRecord(string $layout, array $data, array $scripts = [], array $portalData = []);
+    public function createRecord(string $layout, array $data, array $scripts = [], array $portalData = []): mixed;
 
     /**
      * @param string $layout
@@ -52,7 +53,7 @@ interface DataApiInterface
      * @return mixed
      * @throws Exception
      */
-    public function editRecord(string $layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = []);
+    public function editRecord(string $layout, $recordId, array $data, $lastModificationId = null, array $portalData = [], array $scripts = []): mixed;
 
     /**
      * Duplicate an existing record
@@ -63,7 +64,7 @@ interface DataApiInterface
      * @return mixed
      * @throws Exception
      */
-      public function duplicateRecord(string $layout, $recordId, array $scripts = []);
+      public function duplicateRecord(string $layout, $recordId, array $scripts = []): mixed;
 
       /**
        * Delete record by id
@@ -74,7 +75,7 @@ interface DataApiInterface
        *
        * @throws Exception
        */
-      public function deleteRecord(string $layout, $recordId, array $scripts = []);
+      public function deleteRecord(string $layout, $recordId, array $scripts = []): void;
 
     /**
      * Get record detail
@@ -83,25 +84,25 @@ interface DataApiInterface
      * @param       $recordId
      * @param array $portalOptions
      * @param array $scripts
-     * @param null  $responseLayout
-     *
+     * @param null $responseLayout
+     * @param int|null $dateFormat
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null);
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, ?int $dateFormat = null): mixed;
 
     /**
      * @param string $layout
-     * @param null   $sort
-     * @param null   $offset
-     * @param null   $limit
+     * @param ?string   $sort
+     * @param ?int   $offset
+     * @param ?int   $limit
      * @param array  $portals
      * @param array  $scripts
-     * @param string $responseLayout
-     *
-     * @return mixed
+     * @param ?string $responseLayout
+     * @param ?int $dateFormat
+     * @return array|Response
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null);
+    public function getRecords(string $layout, ?string $sort = null, ?int $offset = null, ?int $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null, ?int $dateFormat = null): array|Response;
 
     /**
      * @param string $layout
@@ -109,50 +110,50 @@ interface DataApiInterface
      * @param string $containerFieldName
      * @param        $containerFieldRepetition
      * @param string $filepath
-     * @param string $filename
+     * @param string|null $filename
      *
      * @return mixed
      */
-    public function uploadToContainer(string $layout, $recordId, string $containerFieldName, $containerFieldRepetition, string $filepath, string $filename);
+    public function uploadToContainer(string $layout, $recordId, string $containerFieldName, $containerFieldRepetition, string $filepath, ?string $filename = null): bool;
 
     /**
      * @param string $layout
-     * @param array  $query
-     * @param null   $sort
-     * @param null   $offset
-     * @param null   $limit
-     * @param array  $portals
-     * @param array  $scripts
-     * @param string $responseLayout
+     * @param array $query
+     * @param null $sort
+     * @param null $offset
+     * @param null $limit
+     * @param array $portals
+     * @param array $scripts
+     * @param string|null $responseLayout
      *
-     * @return mixed
+     * @return array|bool|Response
      */
-    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null);
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], string $responseLayout = null): array|bool|Response;
 
     /**
      * Execute script alone
      *
      * @param string $layout
      * @param string $scriptName
-     * @param string $scriptParam
+     * @param string|null $scriptParam
      *
-     * @return mixed
+     * @return string|true|Response
      * @throws Exception
      */
-    public function executeScript(string $layout, string $scriptName, string $scriptParam = null);
+    public function executeScript(string $layout, string $scriptName, string $scriptParam = null): string|true|Response;
 
     /**
      * @param string $layout
-     * @param array  $globalFields
+     * @param array $globalFields
      *
-     * @return mixed
+     * @return array|Response
      */
-    public function setGlobalFields(string $layout, array $globalFields);
+    public function setGlobalFields(string $layout, array $globalFields): array|Response;
 
     /**
-     * @return mixed
+     * @return string|null
      */
-    public function getApiToken();
+    public function getApiToken(): ?string;
 
     /**
      * @param string $token
@@ -160,55 +161,55 @@ interface DataApiInterface
      *
      * @return True|False
      */
-    public function setApiToken(string $token, $date = null);
+    public function setApiToken(string $token, $date = null): bool;
 
     /**
-     * returns API token last use date, or False if there is no last use date.
+     * returns the API token last use date, or False if there is no last use date.
      *
-     * @return string|False
+     * @return false|string|null
      */
-    public function getApiTokenDate();
+    public function getApiTokenDate(): false|string|null;
 
     /**
     * sets api token last used date. for internal library use. token lifetime is reset on each use in FM DAPI, hence this.
     *
     * @return True|False
     */
-    public function setApiTokenDate();
+    public function setApiTokenDate(): bool;
 
     /**
      * @return True|False
      */
-    public function isApiTokenExpired();
+    public function isApiTokenExpired(): bool;
 
     /**
      * @return True/False
      */
-    public function refreshToken();
+    public function refreshToken(): bool;
 
     /**
      * @return mixed
      * @throws Exception
      */
-    public function getProductInfo();
+    public function getProductInfo(): array;
 
     /**
      * @return mixed
      * @throws Exception
      */
-    public function getDatabaseNames();
+    public function getDatabaseNames(): array;
 
     /**
      * @return mixed
      * @throws Exception
      */
-    public function getLayoutNames();
+    public function getLayoutNames(): array;
 
     /**
      * @return mixed
      * @throws Exception
      */
-    public function getScriptNames();
+    public function getScriptNames(): array;
 
     /**
      * @param string $layout
@@ -217,5 +218,13 @@ interface DataApiInterface
      * @throws Exception
      * @return mixed
      */
-    public function getLayoutMetadata(string $layout, $recordId = null);
+    public function getLayoutMetadata(string $layout, $recordId = null): array;
+
+    /**
+     * set DAPIVersion separate from constructor
+     *
+     * @param DapiVersion $version
+     * @return void
+     */
+    public function setDAPIVersion(DapiVersion $version): void;
 }

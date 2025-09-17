@@ -13,23 +13,23 @@ final class Response
     /**
      * @var array
      */
-    private $headers = [];
+    private array $headers;
     /**
      * @var array
      */
-    private $body = [];
+    private array $body;
     /**
      * @var array
      */
-    private $response = [];
+    private array $response;
     /**
      * @var array
      */
-    private $records = [];
+    private array $records;
     /**
-     * @var int
+     * @var ?int
      */
-    private $responseCodeHTTP = null;
+    private ?int $responseCodeHTTP;
 
     /**
      * Response constructor.
@@ -44,13 +44,18 @@ final class Response
         $this->headers = $headers;
         $this->body = $body;
         $this->response = $this->body['response'];
+
         //checks to see if data even exists in this response type, logins do not, for example
         if (isset($this->response['data']) || array_key_exists('data', $this->response)) {
             $this->records = $this->response['data'];
+        } else {
+            $this->records = []; // Initialize as empty array when no data exists
         }
+
         // parses "HTTP/1.1 200 OK" and returns the 200
         $this->responseCodeHTTP = (int)explode(" ", $this->getHeader("Status"))[1];
     }
+
 
     /**
      * @param string $headers
@@ -59,18 +64,18 @@ final class Response
      * @return self
      * @throws Exception
      */
-    public static function parse(string $headers, string $body)
+    public static function parse(string $headers, string $body): self
     {
         return new self(self::parseHeaders($headers), self::parseBody($body));
     }
 
     /**
-     * @param $header
+     * @param string $header
      *
      * @return mixed
      * @throws Exception
      */
-    public function getHeader(string $header)
+    public function getHeader(string $header): mixed
     {
         if (isset($this->headers[$header])) {
             return $this->headers[$header];
@@ -82,7 +87,7 @@ final class Response
     /**
      * @return int
      */
-    public function getHttpCode()
+    public function getHttpCode(): int
     {
         return $this->responseCodeHTTP;
     }
@@ -90,7 +95,7 @@ final class Response
     /**
      * @return array
      */
-    public function getBody()
+    public function getBody(): array
     {
         return $this->body;
     }
@@ -98,7 +103,7 @@ final class Response
     /**
      * @return array
      */
-    public function getRecords()
+    public function getRecords(): array
     {
         return $this->records;
     }
@@ -106,7 +111,7 @@ final class Response
     /**
      * @return array
      */
-    public function getRawResponse()
+    public function getRawResponse(): array
     {
         return $this->response;
     }
@@ -114,7 +119,7 @@ final class Response
     /**
      * @return string
      */
-    public function getScriptResult()
+    public function getScriptResult(): string
     {
         if (isset($this->response['scriptResult']) || array_key_exists('scriptResult', $this->response)){
             return $this->response['scriptResult'];
@@ -126,7 +131,7 @@ final class Response
     /**
      * @return string
      */
-    public function getScriptError()
+    public function getScriptError(): string
     {
         if (isset($this->response['scriptError']) || array_key_exists('scriptError', $this->response)){
             return $this->response['scriptError'];
@@ -141,7 +146,7 @@ final class Response
      * @return array
      * @throws Exception
      */
-    private static function parseHeaders(string $headers)
+    private static function parseHeaders(string $headers): array
     {
         // We convert the raw header string into an array
         $headers = explode("\n", $headers);
@@ -153,7 +158,7 @@ final class Response
             }, $exploded);
         }, $headers);
 
-        // We remove empty lines in array
+        // We remove empty lines in the array
         $headers = array_filter($headers, function ($value) {
             return (is_array($value) ? $value[0] : $value) !== '';
         });
@@ -192,7 +197,7 @@ final class Response
      * @return array
      * @throws Exception
      */
-    private static function parseBody(string $body)
+    private static function parseBody(string $body): array
     {
         return json_decode($body, true, JSON_THROW_ON_ERROR);
     }
