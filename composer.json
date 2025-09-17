@@ -2,9 +2,8 @@
     "name": "rcconsulting/myfmapilibrary-for-php",
     "type": "library",
     "description": "FileMaker 17+ Data API PHP wrapper",
-    "Keywords": ["Claris", "FileMaker", "Data API", "API", "REST", "Database", "Wrapper"],
+    "keywords": ["Claris", "FileMaker", "Data API", "API", "REST", "Database", "Wrapper"],
     "license": "BSD-3-Clause",
-    "version": "3.0.0",
     "minimum-stability": "stable",
     "authors": [
       {
