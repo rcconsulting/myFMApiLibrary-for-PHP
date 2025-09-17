@@ -308,7 +308,7 @@ final class DataApi implements DataApiInterface {
      * @return mixed
      * @throws Exception
      */
-    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, ?int $dateFormat = self::DATE_DEFAULT): mixed
+    public function getRecord(string $layout, $recordId, array $portalOptions = [], array $scripts = [], $responseLayout = null, ?int $dateFormat = null): mixed
     {
         $layout = $this->prepareURLpart($layout);
         $recordId = $this->prepareURLpart($recordId);
@@ -366,11 +366,11 @@ final class DataApi implements DataApiInterface {
      * @param array $portals
      * @param array $scripts
      * @param ?string $responseLayout
-     * @param int $dateFormat
+     * @param int|null $dateFormat
      * @return array|Response
      * @throws Exception
      */
-    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, ?int $dateFormat = self::DATE_DEFAULT): array|Response
+    public function getRecords(string $layout, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, ?int $dateFormat = null): array|Response
     {
         $layout = $this->prepareURLpart($layout);
         $jsonOptions = [];
@@ -470,11 +470,11 @@ final class DataApi implements DataApiInterface {
      * @param array $portals
      * @param array $scripts
      * @param string|null $responseLayout
-     * @param int $dateFormat
+     * @param int|null $dateFormat
      * @return array|bool|Response
      * @throws Exception
      */
-    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = self::DATE_DEFAULT): array|bool|Response
+    public function findRecords(string $layout, array $query, $sort = null, $offset = null, $limit = null, array $portals = [], array $scripts = [], ?string $responseLayout = null, int $dateFormat = null): array|bool|Response
     {
         $layout = $this->prepareURLpart($layout);
 
