@@ -1086,4 +1086,4 @@ final class DataApi implements DataApiInterface {
         };
     }
 }
-class_alias(HttpClientType::class, 'RCConsulting\\FileMakerApi\\HttpClientType');
+//class_alias(HttpClientType::class, 'RCConsulting\\FileMakerApi\\HttpClientType');
