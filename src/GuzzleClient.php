@@ -9,7 +9,7 @@ use RCConsulting\FileMakerApi\Exception\Exception;
 
 /**
  * Class GuzzleClient
- * 
+ *
  * Guzzle-based HTTP client implementation for the FileMaker Data API.
  * This implementation uses the Guzzle HTTP client library instead of cURL directly.
  *
@@ -70,7 +70,7 @@ final class GuzzleClient implements HttpClientInterface
     public function request(string $method, string $url, array $options): Response
     {
         try {
-            $guzzleOptions = [];
+            $guzzleOptions =   [];
 
             // Remove leading slash from URL since we're using base_uri
             $url = ltrim($url, '/');
@@ -81,17 +81,15 @@ final class GuzzleClient implements HttpClientInterface
             } elseif (isset($options['json']) && $method !== 'GET') {
                 // For empty JSON arrays, send empty JSON object with proper headers
                 $guzzleOptions[RequestOptions::BODY] = '{}';
-                $guzzleOptions[RequestOptions::HEADERS] = array_merge(
+                $options['headers'] = array_merge(
                     $options['headers'] ?? [],
                     ['Content-Type' => 'application/json']
                 );
-            } else {
-                // Set headers for non-JSON requests
-                if (isset($options['headers'])) {
-                    $guzzleOptions[RequestOptions::HEADERS] = $options['headers'];
-                }
             }
-
+            // Set headers for all requests
+            if (isset($options['headers'])) {
+                $guzzleOptions[RequestOptions::HEADERS] = $options['headers'];
+            }
             // Handle file upload
             if (!empty($options['file']) && $method === 'POST') {
                 // Remove JSON options for file uploads
@@ -172,8 +170,8 @@ final class GuzzleClient implements HttpClientInterface
     {
         if ($response->getHttpCode() === 100 || ($response->getHttpCode() >= 400 && $response->getHttpCode() < 600)) {
             if (isset($response->getBody()['messages'][0]['message'])) {
-                $eMessage = is_array($response->getBody()['messages'][0]['message']) 
-                    ? implode(' - ', $response->getBody()['messages'][0]['message']) 
+                $eMessage = is_array($response->getBody()['messages'][0]['message'])
+                    ? implode(' - ', $response->getBody()['messages'][0]['message'])
                     : $response->getBody()['messages'][0]['message'];
                 $eCode = $response->getBody()['messages'][0]['code'] ?? $response->getHttpCode();
 
@@ -182,8 +180,8 @@ final class GuzzleClient implements HttpClientInterface
 
             // Status code 100 with no message is OK
             if ($response->getHttpCode() !== 100) {
-                $message = is_array($response->getBody()) || is_object($response->getBody()) 
-                    ? json_encode($response->getBody()) 
+                $message = is_array($response->getBody()) || is_object($response->getBody())
+                    ? json_encode($response->getBody())
                     : $response->getBody();
 
                 if (empty($message)) {
