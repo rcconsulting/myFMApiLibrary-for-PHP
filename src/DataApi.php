@@ -196,7 +196,7 @@ final class DataApi implements DataApiInterface {
         if ($this->returnResponseObject) {
             return $response;
         } else {
-            return $response->getRecords()['response']['recordId'];
+            return $response->getBody()['response']['recordId'];
         }
     }
 
