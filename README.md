@@ -1,4 +1,4 @@
-FileMaker 17/18/19/20/21/22 Data API wrapper - myFMApiLibrary for PHP
+FileMaker 17/18/19/20/21/22/26 Data API wrapper - myFMApiLibrary for PHP
 =======================
 
 ## Team
