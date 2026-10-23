@@ -79,9 +79,9 @@ final class Response
     {
         if (isset($this->headers[$header])) {
             return $this->headers[$header];
-        } else {
-            throw new Exception("Header not found");
         }
+
+        throw new Exception("Header not found");
     }
 
     /**
@@ -123,9 +123,9 @@ final class Response
     {
         if (isset($this->response['scriptResult']) || array_key_exists('scriptResult', $this->response)){
             return $this->response['scriptResult'];
-        } else {
-            return '';
         }
+
+        return '';
     }
 
     /**
@@ -135,9 +135,9 @@ final class Response
     {
         if (isset($this->response['scriptError']) || array_key_exists('scriptError', $this->response)){
             return $this->response['scriptError'];
-        } else {
-            return '';
         }
+
+        return '';
     }
 
     /**
@@ -150,16 +150,16 @@ final class Response
     {
         // We convert the raw header string into an array
         $headers = explode("\n", $headers);
-        $headers = array_map(function ($header) {
+        $headers = array_map(static function ($header) {
             $exploded = explode(":", $header, 2);
 
-            return array_map(function ($value) {
+            return array_map(static function ($value) {
                 return trim($value);
             }, $exploded);
         }, $headers);
 
         // We remove empty lines in the array
-        $headers = array_filter($headers, function ($value) {
+        $headers = array_filter($headers, static function ($value) {
             return (is_array($value) ? $value[0] : $value) !== '';
         });
 

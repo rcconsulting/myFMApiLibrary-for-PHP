@@ -195,9 +195,9 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getBody()['response']['recordId'];
         }
+
+        return $response->getBody()['response']['recordId'];
     }
 
     /**
@@ -236,9 +236,9 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getRawResponse()['modId'];
         }
+
+        return $response->getRawResponse()['modId'];
     }
 
     /**
@@ -268,9 +268,9 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getRawResponse()['recordId'];
         }
+
+        return $response->getRawResponse()['recordId'];
     }
 
     /**
@@ -351,9 +351,9 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getRecords()[0];
         }
+
+        return $response->getRecords()[0];
     }
 
     /**
@@ -384,7 +384,7 @@ final class DataApi implements DataApiInterface {
         }
 
         if (!is_null($sort)) {
-            $jsonOptions['_sort'] = (is_array($sort) ? json_encode($sort) : $sort);
+            $jsonOptions['_sort'] = $sort;
         }
 
         if (!is_null($responseLayout)) {
@@ -416,9 +416,9 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getRecords();
         }
+
+        return $response->getRecords();
     }
 
     /**
@@ -493,7 +493,7 @@ final class DataApi implements DataApiInterface {
                 }
 
                 if (isset($queryItem['options']['omit'])) {
-                    if ($queryItem['options']['omit'] || $queryItem['options']['omit'] == "true") {
+                    if ($queryItem['options']['omit'] || $queryItem['options']['omit'] === "true") {
                         $preparedQuery[] = array_merge($item, ['omit' => "true"]);
                     } else {
                         $preparedQuery[] = array_merge($item, ['omit' => "false"]);
@@ -554,15 +554,15 @@ final class DataApi implements DataApiInterface {
         } catch (Exception $e) {
             if ($err = $this->dAPIerrorHandler($e)) {
                 return $err;
-            } else {
-                throw $e;
             }
+
+            throw $e;
         }
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getRecords();
         }
+
+        return $response->getRecords();
     }
 
     /**
@@ -606,17 +606,17 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            if ($response->getScriptError() == 0) {
-                if (array_key_exists('scriptResult', $response->getRawResponse())) {
-                    return $response->getScriptResult();
-                } else {
-                    return True;
-                }
-            } else {
-                return $response->getScriptError();
-            }
         }
+
+        if ($response->getScriptError() == 0) {
+            if (array_key_exists('scriptResult', $response->getRawResponse())) {
+                return $response->getScriptResult();
+            }
+
+            return True;
+        }
+
+        return $response->getScriptError();
     }
 
     /**
@@ -643,9 +643,9 @@ final class DataApi implements DataApiInterface {
         );
         if ($this->returnResponseObject) {
             return $response;
-        } else {
-            return $response->getBody();
         }
+
+        return $response->getBody();
     }
 
     // UTILITY FUNCTIONS
@@ -663,15 +663,15 @@ final class DataApi implements DataApiInterface {
             if ($this->isApiTokenExpired()) {
                 if ($this->refreshToken()) { // relogin using stored credentials, because the token expired.
                     return ['Authorization' => "Bearer $this->apiToken"];
-                } else {
-                    // this can happen when refresh token fails, which may happen with an expired token and oauth login
-                    return False;
                 }
-            } else {
-                // Update the token use date and keep going
-                $this->setApiTokenDate();
-                return ['Authorization' => "Bearer $this->apiToken"];
+
+                // this can happen when refresh token fails, which may happen with an expired token and oauth login
+                return False;
             }
+
+            // Update the token use date and keep going
+            $this->setApiTokenDate();
+            return ['Authorization' => "Bearer $this->apiToken"];
         } else {
             return False;
         }
@@ -791,12 +791,12 @@ final class DataApi implements DataApiInterface {
         if ($this->dapiUserName = $user) {
             if ($this->dapiUserPass = $pass) {
                 return True;
-            } else {
-                return False;
             }
-        } else {
+
             return False;
         }
+
+        return False;
     }
 
     /**
@@ -811,12 +811,12 @@ final class DataApi implements DataApiInterface {
         if ($this->oAuthRequestId = $oAuthRequestId) {
             if ($this->oAuthIdentifier = $oAuthIdentifier) {
                 return True;
-            } else {
-                return False;
             }
-        } else {
+
             return False;
         }
+
+        return False;
     }
 
     // TOKEN MANAGEMENT
@@ -849,9 +849,9 @@ final class DataApi implements DataApiInterface {
             }
             $this->hasToken = True;
             return True;
-        } else {
-            return False;
         }
+
+        return False;
     }
 
     /**
@@ -863,9 +863,9 @@ final class DataApi implements DataApiInterface {
     {
         if (!is_null($this->apiTokenDate)) {
             return $this->apiTokenDate;
-        } else {
-            return False;
         }
+
+        return False;
     }
 
     /**
@@ -879,9 +879,9 @@ final class DataApi implements DataApiInterface {
         // this function assumes it will be called in the context of using the token
         if ($this->apiTokenDate = time()) {
             return True;
-        } else {
-            return False;
         }
+
+        return False;
     }
 
     /**
@@ -894,14 +894,10 @@ final class DataApi implements DataApiInterface {
         // checks if token is OK to use
         if ($this->getApiTokenDate()) {
             $expiry = $this->apiTokenDate + (14 * 60); // actual tokens last 15 minutes. we'll be conservative here.
-            if (time() > $expiry) {
-                return True;
-            } else {
-                return False;
-            }
-        } else {
-            return True; // if it's null, it has not been set, so it is "expired"
+            return time() > $expiry;
         }
+
+        return True; // if it's null, it has not been set, so it is "expired"
     }
 
     /**
@@ -914,21 +910,23 @@ final class DataApi implements DataApiInterface {
     public function refreshToken(): bool
     {
         // warning: cannot be called before login()
-        if (!is_null($this->dapiUserName)) {
+        if (!is_null($this->dapiUserName) && !is_null($this->dapiUserPass)) {
             if ($this->login($this->dapiUserName, $this->dapiUserPass)) {
                 return True;
-            } else {
-                return False;
             }
-        } elseif (!is_null($this->oAuthRequestId)) {
-            if ($this->loginOauth($this->oAuthRequestId, $this->oAuthIdentifier)) {
-                return True;
-            } else {
-                return False;
-            }
-        } else {
+
             return False;
         }
+
+        if (!is_null($this->oAuthRequestId) && !is_null($this->oAuthIdentifier)) {
+            if ($this->loginOauth($this->oAuthRequestId, $this->oAuthIdentifier)) {
+                return True;
+            }
+
+            return False;
+        }
+
+        return False;
     }
 
     /**
@@ -945,11 +943,7 @@ final class DataApi implements DataApiInterface {
             ]
         );
 
-        if ((int)$response->getBody()['messages'][0]['code'] === 0) {
-            return True;
-        } else {
-            return False;
-        }
+        return (int)$response->getBody()['messages'][0]['code'] === 0;
     }
 
     // METADATA OPERATIONS
